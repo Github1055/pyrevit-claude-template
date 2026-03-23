@@ -265,3 +265,39 @@ if __name__ == "__main__":
 - Hardcode Revit internal units — always convert from mm using `mm_to_feet()`
 - Call `forms` dialog functions inside helper or data functions — keep them in `main()`
 - Assume a parameter exists on every element — always use `try/except` and check `HasValue`
+
+---
+
+## gstack
+
+Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools.
+
+### Available Skills
+
+- `/office-hours`
+- `/plan-ceo-review`
+- `/plan-eng-review`
+- `/plan-design-review`
+- `/design-consultation`
+- `/review`
+- `/ship`
+- `/land-and-deploy`
+- `/canary`
+- `/benchmark`
+- `/browse`
+- `/qa`
+- `/qa-only`
+- `/design-review`
+- `/setup-browser-cookies`
+- `/setup-deploy`
+- `/retro`
+- `/investigate`
+- `/document-release`
+- `/codex`
+- `/cso`
+- `/autoplan`
+- `/careful`
+- `/freeze`
+- `/guard`
+- `/unfreeze`
+- `/gstack-upgrade`
