@@ -115,18 +115,17 @@ namespace SmartFiler.Services
             // Deferred files keep their deferred status
             if (deferredSet.Contains(file.FullPath))
             {
-                return file with { Action = FileAction.Deferred };
+                file.Action = FileAction.Deferred;
+                return file;
             }
 
             // Backup categories are suggested for deletion
             if (BackupCategories.Contains(file.Category))
             {
-                return file with
-                {
-                    SuggestedDestination = null,
-                    Action = FileAction.Delete,
-                    MatchConfidence = 1.0
-                };
+                file.SuggestedDestination = null;
+                file.Action = FileAction.Delete;
+                file.MatchConfidence = 1.0;
+                return file;
             }
 
             // For Revit files: try deep matching against the Revit library tree first
@@ -137,14 +136,11 @@ namespace SmartFiler.Services
                     var revitResult = await _revitMatcher.FindBestFolderAsync(file);
                     if (revitResult.FolderPath is not null && revitResult.Score > 0)
                     {
-                        // Build full destination path: folder + filename
                         var dest = Path.Combine(revitResult.FolderPath, file.FileName);
-                        return file with
-                        {
-                            SuggestedDestination = dest,
-                            MatchConfidence = revitResult.Score,
-                            MatchedProjectFolder = Path.GetFileName(revitResult.FolderPath)
-                        };
+                        file.SuggestedDestination = dest;
+                        file.MatchConfidence = revitResult.Score;
+                        file.MatchedProjectFolder = Path.GetFileName(revitResult.FolderPath);
+                        return file;
                     }
                 }
                 catch { /* Revit library matching is best-effort */ }
@@ -154,12 +150,10 @@ namespace SmartFiler.Services
             var fuzzyResult = await _fuzzyMatcher.FindBestMatchAsync(file.FileName, projectFolders);
             if (fuzzyResult.FolderPath is not null && fuzzyResult.Score > 0)
             {
-                return file with
-                {
-                    SuggestedDestination = fuzzyResult.FolderPath,
-                    MatchConfidence = fuzzyResult.Score,
-                    MatchedProjectFolder = Path.GetFileName(fuzzyResult.FolderPath)
-                };
+                file.SuggestedDestination = fuzzyResult.FolderPath;
+                file.MatchConfidence = fuzzyResult.Score;
+                file.MatchedProjectFolder = Path.GetFileName(fuzzyResult.FolderPath);
+                return file;
             }
 
             // Fall back to move history frequency for this extension
@@ -167,21 +161,17 @@ namespace SmartFiler.Services
                 && extensionFrequency.TryGetValue(file.Extension, out var historyDest)
                 && historyDest is not null)
             {
-                return file with
-                {
-                    SuggestedDestination = historyDest,
-                    MatchConfidence = 0.5
-                };
+                file.SuggestedDestination = historyDest;
+                file.MatchConfidence = 0.5;
+                return file;
             }
 
             // Fall back to category default destination
             if (CategoryDefaults.TryGetValue(file.Category, out var defaultDest))
             {
-                return file with
-                {
-                    SuggestedDestination = defaultDest,
-                    MatchConfidence = 0.3
-                };
+                file.SuggestedDestination = defaultDest;
+                file.MatchConfidence = 0.3;
+                return file;
             }
 
             return file;

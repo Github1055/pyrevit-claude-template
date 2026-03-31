@@ -153,8 +153,9 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             var selected = GetSelectedFiles();
-            if (selected.Count > 0) _ = vm.DeferFilesAsync(selected);
-            else vm.DeferSelectedCommand.Execute(null);
+            if (selected.Count == 0 && vm.SelectedFile != null)
+                selected = [vm.SelectedFile];
+            if (selected.Count > 0) vm.DeferFiles(selected);
         }
     }
 
@@ -228,6 +229,42 @@ public partial class MainWindow : Window
     private void UpdateThemeIcon()
     {
         ThemeIcon.Text = ThemeManager.CurrentTheme == ThemeManager.Theme.Dark ? "\u2600" : "\uD83C\uDF19";
+    }
+
+    // ─── Keyboard shortcuts (PreviewKeyDown intercepts before ListView type-ahead) ───
+
+    private void TriageListView_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        switch (e.Key)
+        {
+            case System.Windows.Input.Key.Return:
+            {
+                var selected = GetSelectedFiles();
+                if (selected.Count > 0) vm.ApproveFiles(selected);
+                else vm.ApproveSelectedCommand.Execute(null);
+                e.Handled = true;
+                break;
+            }
+            case System.Windows.Input.Key.D:
+            {
+                var selected = GetSelectedFiles();
+                if (selected.Count == 0 && vm.SelectedFile != null)
+                    selected = [vm.SelectedFile];
+                if (selected.Count > 0) vm.DeferFiles(selected);
+                e.Handled = true;
+                break;
+            }
+            case System.Windows.Input.Key.Delete:
+            {
+                var selected = GetSelectedFiles();
+                if (selected.Count > 0) vm.MarkFilesForDeletion(selected);
+                else vm.DeleteSelectedCommand.Execute(null);
+                e.Handled = true;
+                break;
+            }
+        }
     }
 
     // ─── Double-click to open file ───
@@ -308,10 +345,20 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             var selected = GetSelectedFiles();
-            if (selected.Count > 1)
-                _ = vm.DeferFilesAsync(selected);
-            else
-                vm.DeferSelectedCommand.Execute(null);
+            if (selected.Count > 0)
+                vm.DeferFiles(selected);
+            else if (vm.SelectedFile != null)
+                vm.DeferFiles([vm.SelectedFile]);
+        }
+    }
+
+    private void ContextMenu_Reset(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            var selected = GetSelectedFiles();
+            if (selected.Count > 0) vm.ResetFiles(selected);
+            else if (vm.SelectedFile != null) vm.ResetFiles([vm.SelectedFile]);
         }
     }
 
@@ -335,6 +382,7 @@ public partial class MainWindow : Window
         {
             var selected = GetSelectedFiles();
             if (selected.Count > 0) vm.ApproveFiles(selected);
+            else if (vm.SelectedFile != null) vm.ApproveFiles([vm.SelectedFile]);
         }
     }
 
@@ -343,7 +391,9 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             var selected = GetSelectedFiles();
-            if (selected.Count > 0) _ = vm.DeferFilesAsync(selected);
+            if (selected.Count == 0 && vm.SelectedFile != null)
+                selected = [vm.SelectedFile];
+            if (selected.Count > 0) vm.DeferFiles(selected);
         }
     }
 
@@ -353,6 +403,17 @@ public partial class MainWindow : Window
         {
             var selected = GetSelectedFiles();
             if (selected.Count > 0) vm.MarkFilesForDeletion(selected);
+            else if (vm.SelectedFile != null) vm.MarkFilesForDeletion([vm.SelectedFile]);
+        }
+    }
+
+    private void Btn_ResetSelection(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            var selected = GetSelectedFiles();
+            if (selected.Count > 0) vm.ResetFiles(selected);
+            else if (vm.SelectedFile != null) vm.ResetFiles([vm.SelectedFile]);
         }
     }
 

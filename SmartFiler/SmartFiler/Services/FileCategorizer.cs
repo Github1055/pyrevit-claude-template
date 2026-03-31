@@ -182,7 +182,8 @@ namespace SmartFiler.Services
             for (int i = 0; i < files.Count; i++)
             {
                 var f = files[i];
-                files[i] = f with { Category = Categorize(f.FileName) };
+                f.Category = Categorize(f.FileName);
+                files[i] = f;
             }
         }
     }

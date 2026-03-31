@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace SmartFiler.Data
 {
@@ -48,21 +49,37 @@ namespace SmartFiler.Data
     /// <summary>
     /// A file discovered during a scan, with classification and suggested destination.
     /// </summary>
-    public record ScannedFile
+    public class ScannedFile : INotifyPropertyChanged
     {
-        public string FullPath { get; init; } = string.Empty;
-        public string FileName { get; init; } = string.Empty;
-        public string Extension { get; init; } = string.Empty;
-        public FileCategory Category { get; init; }
-        public long SizeBytes { get; init; }
-        public DateTime LastModified { get; init; }
-        public string? SuggestedDestination { get; init; }
+        public string FullPath { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public string Extension { get; set; } = string.Empty;
+        public FileCategory Category { get; set; }
+        public long SizeBytes { get; set; }
+        public DateTime LastModified { get; set; }
+        public string? SuggestedDestination { get; set; }
         public string? AlternativeDestination { get; set; }
-        public double MatchConfidence { get; init; }
-        public string? MatchedProjectFolder { get; init; }
-        public FileAction Action { get; set; } = FileAction.Pending;
-        public bool IsLocked { get; init; }
-        public string? LockReason { get; init; }
+        public double MatchConfidence { get; set; }
+        public string? MatchedProjectFolder { get; set; }
+
+        private FileAction _action = FileAction.Pending;
+        public FileAction Action
+        {
+            get => _action;
+            set
+            {
+                if (_action != value)
+                {
+                    _action = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Action)));
+                }
+            }
+        }
+
+        public bool IsLocked { get; set; }
+        public string? LockReason { get; set; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>Returns the directory the file currently lives in.</summary>
         public string SourceDirectory => System.IO.Path.GetDirectoryName(FullPath) ?? "";

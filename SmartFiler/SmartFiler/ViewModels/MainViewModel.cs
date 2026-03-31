@@ -114,6 +114,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _approvedCount;
     [ObservableProperty] private int _deferredCount;
     [ObservableProperty] private int _deleteCount;
+    [ObservableProperty] private bool _isSelectedDeferred;
 
     // Last move result
     [ObservableProperty] private string _lastBatchId = "";
@@ -411,49 +412,68 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Marks all files in the provided list (or just SelectedFile) as Approved.</summary>
+    /// <summary>Marks all files in the provided list as Approved (works from any action state).</summary>
     public void ApproveFiles(IList<ScannedFile> files)
     {
         foreach (var f in files)
-            if (f.Action == FileAction.Pending) f.Action = FileAction.Approved;
+            if (f.Action != FileAction.Approved) f.Action = FileAction.Approved;
         UpdateCounts();
-        RefreshView();
+        RefreshFilteredFiles();
     }
 
     [RelayCommand]
     private void ApproveSelected()
     {
-        if (SelectedFile != null && SelectedFile.Action == FileAction.Pending)
+        if (SelectedFile != null && SelectedFile.Action != FileAction.Approved)
         {
             SelectedFile.Action = FileAction.Approved;
             UpdateCounts();
-            RefreshView();
+            RefreshFilteredFiles();
         }
     }
 
-    [RelayCommand]
-    /// <summary>Defers all files in the provided list.</summary>
-    public async Task DeferFilesAsync(IList<ScannedFile> files)
+    /// <summary>Toggles defer on all files in the provided list.
+    /// Files already Deferred are returned to Pending; all others are set to Deferred.
+    /// UI is updated synchronously; DB persistence is fire-and-forget.</summary>
+    public void DeferFiles(IList<ScannedFile> files)
     {
+        // 1. Change all actions synchronously
+        var toRemoveFromDb = new List<string>();
+        var toAddToDb = new List<string>();
+
         foreach (var f in files)
         {
-            f.Action = FileAction.Deferred;
-            await _deferredRepo.AddAsync(f.FullPath);
+            if (f.Action == FileAction.Deferred)
+            {
+                f.Action = FileAction.Pending;
+                toRemoveFromDb.Add(f.FullPath);
+            }
+            else
+            {
+                f.Action = FileAction.Deferred;
+                toAddToDb.Add(f.FullPath);
+            }
         }
+
+        // 2. Force full UI rebuild so icons update
         UpdateCounts();
-        RefreshView();
+        RefreshFilteredFiles();
+
+        // 3. Persist to DB in background (best-effort)
+        _ = Task.Run(async () =>
+        {
+            foreach (var path in toRemoveFromDb)
+                try { await _deferredRepo.RemoveAsync(path); } catch { }
+            foreach (var path in toAddToDb)
+                try { await _deferredRepo.AddAsync(path); } catch { }
+        });
     }
 
     [RelayCommand]
-    private async Task DeferSelectedAsync()
+    private void DeferSelected()
     {
         if (SelectedFile != null)
-        {
-            SelectedFile.Action = FileAction.Deferred;
-            await _deferredRepo.AddAsync(SelectedFile.FullPath);
-            UpdateCounts();
-            RefreshView();
-        }
+            DeferFiles([SelectedFile]);
     }
 
     /// <summary>Marks all files in the provided list (or just SelectedFile) as Delete.</summary>
@@ -462,7 +482,7 @@ public partial class MainViewModel : ObservableObject
         foreach (var f in files)
             f.Action = FileAction.Delete;
         UpdateCounts();
-        RefreshView();
+        RefreshFilteredFiles();
     }
 
     [RelayCommand]
@@ -472,8 +492,29 @@ public partial class MainViewModel : ObservableObject
         {
             SelectedFile.Action = FileAction.Delete;
             UpdateCounts();
-            RefreshView();
+            RefreshFilteredFiles();
         }
+    }
+
+    /// <summary>Resets all files in the provided list back to Pending (clears Approve/Defer/Delete).</summary>
+    public void ResetFiles(IList<ScannedFile> files)
+    {
+        var toRemoveFromDb = new List<string>();
+        foreach (var f in files)
+        {
+            if (f.Action == FileAction.Deferred)
+                toRemoveFromDb.Add(f.FullPath);
+            f.Action = FileAction.Pending;
+        }
+
+        UpdateCounts();
+        RefreshFilteredFiles();
+
+        _ = Task.Run(async () =>
+        {
+            foreach (var path in toRemoveFromDb)
+                try { await _deferredRepo.RemoveAsync(path); } catch { }
+        });
     }
 
     [RelayCommand]
@@ -688,6 +729,7 @@ public partial class MainViewModel : ObservableObject
         PreviewCreated = "";
         PreviewModified = "";
         AlternativeDestination = "";
+        IsSelectedDeferred = value?.Action == FileAction.Deferred;
 
         if (value == null) return;
 
@@ -730,6 +772,18 @@ public partial class MainViewModel : ObservableObject
     private void SaveFilters() => _settings.Save();
 
     // ─── Helpers ───
+
+    /// <summary>Forces the ListView to re-render a specific item by removing and re-inserting it.
+    /// This guarantees the converter re-evaluates (works around WPF binding not seeing property changes).</summary>
+    private void NotifyFileChanged(ScannedFile file)
+    {
+        var idx = FilteredFiles.IndexOf(file);
+        if (idx >= 0)
+        {
+            FilteredFiles.RemoveAt(idx);
+            FilteredFiles.Insert(idx, file);
+        }
+    }
 
     /// <summary>Lightweight refresh — just tells the ListView to re-render without rebuilding the list.
     /// Preserves multi-selection. Use after action changes (approve/delete/defer).</summary>
@@ -798,6 +852,7 @@ public partial class MainViewModel : ObservableObject
         ApprovedCount = all.Count(f => f.Action == FileAction.Approved);
         DeferredCount = all.Count(f => f.Action == FileAction.Deferred);
         DeleteCount = all.Count(f => f.Action == FileAction.Delete);
+        IsSelectedDeferred = SelectedFile?.Action == FileAction.Deferred;
         RefreshView();
     }
 

@@ -6,8 +6,7 @@
         Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
         Background="{DynamicResource BgBrush}"
-        WindowStartupLocation="CenterScreen"
-        Icon="Resources/app-icon.ico">
+        WindowStartupLocation="CenterScreen">
 
     <Window.InputBindings>
         <KeyBinding Key="Return" Command="{x:Static local:MainWindowCommands.ApproveSelected}"/>
@@ -221,6 +220,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>  <!-- Skipped info -->
                         <RowDefinition Height="Auto"/>  <!-- Keyboard hints -->
+                        <RowDefinition Height="Auto"/>  <!-- Action buttons -->
                         <RowDefinition Height="Auto"/>  <!-- Filters -->
                         <RowDefinition Height="*"/>     <!-- File list + preview -->
                     </Grid.RowDefinitions>
@@ -251,15 +251,33 @@
                                 BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,4,0">
                             <TextBlock Text="Del" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextDimBrush}"/>
                         </Border>
-                        <TextBlock Text="Delete" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="2,0,16,0"/>
-                        <TextBlock Text="|" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="Selection:" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Delete" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- Action buttons row -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
                         <Button Content="✔ Approve" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="10"
                                 Click="Btn_ApproveSelection" Margin="0,0,4,0"/>
-                        <Button Content="⏸ Defer" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="10"
-                                Click="Btn_DeferSelection" Margin="0,0,4,0"/>
+                        <Button Padding="8,3" FontSize="10" Click="Btn_DeferSelection" Margin="0,0,4,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource BtnSecondary}">
+                                    <Setter Property="Content" Value="⏸ Defer"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelectedDeferred}" Value="True">
+                                            <Setter Property="Content" Value="⏸ Deferred ✓"/>
+                                            <Setter Property="Background" Value="#1AFBBF24"/>
+                                            <Setter Property="BorderBrush" Value="#40FBBF24"/>
+                                            <Setter Property="Foreground" Value="#FBBF24"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                         <Button Content="✖ Delete" Style="{StaticResource BtnDanger}" Padding="8,3" FontSize="10"
                                 Click="Btn_DeleteSelection" Margin="0,0,4,0"/>
+                        <Button Content="↺ Reset" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="10"
+                                Click="Btn_ResetSelection" Margin="0,0,12,0"
+                                ToolTip="Reset selected files back to Pending (clears Approve/Defer/Delete)"/>
                         <Button Content="Select All" Style="{StaticResource BtnGhost}" Padding="6,3" FontSize="10"
                                 Click="Btn_SelectAll" Margin="0,0,4,0"/>
                         <Button Content="Deselect All" Style="{StaticResource BtnGhost}" Padding="6,3" FontSize="10"
@@ -267,7 +285,7 @@
                     </StackPanel>
 
                     <!-- Category filters -->
-                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                    <Border Grid.Row="3" Background="{DynamicResource SurfaceBrush}"
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="10,6" Margin="0,0,0,10">
                         <StackPanel>
@@ -317,7 +335,7 @@
                     </Border>
 
                     <!-- File list + preview -->
-                    <Grid Grid.Row="3">
+                    <Grid Grid.Row="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="300"/>
@@ -334,7 +352,8 @@
                                       VirtualizingPanel.VirtualizationMode="Recycling"
                                       SelectionMode="Multiple"
                                       GridViewColumnHeader.Click="GridViewColumnHeader_Click"
-                                      MouseDoubleClick="TriageListView_MouseDoubleClick">
+                                      MouseDoubleClick="TriageListView_MouseDoubleClick"
+                                      PreviewKeyDown="TriageListView_PreviewKeyDown">
                                 <ListView.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Open File" Click="ContextMenu_OpenFile"/>
@@ -343,7 +362,8 @@
                                         <MenuItem Header="Approve (move to destination)" Click="ContextMenu_Approve"/>
                                         <MenuItem Header="Set Alternative Destination..." Click="ContextMenu_SetAlternative"/>
                                         <Separator/>
-                                        <MenuItem Header="Defer" Click="ContextMenu_Defer"/>
+                                        <MenuItem Header="Defer / Undefer" Click="ContextMenu_Defer"/>
+                                        <MenuItem Header="Reset to Pending" Click="ContextMenu_Reset"/>
                                         <MenuItem Header="Delete" Click="ContextMenu_Delete" Foreground="IndianRed"/>
                                     </ContextMenu>
                                 </ListView.ContextMenu>
