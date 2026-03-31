@@ -1,0 +1,752 @@
+<Window x:Class="SmartFiler.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SmartFiler"
+        Title="Smart Filer"
+        Width="1200" Height="800"
+        MinWidth="900" MinHeight="600"
+        Background="{DynamicResource BgBrush}"
+        WindowStartupLocation="CenterScreen"
+        Icon="Resources/app-icon.ico">
+
+    <Window.InputBindings>
+        <KeyBinding Key="Return" Command="{x:Static local:MainWindowCommands.ApproveSelected}"/>
+        <KeyBinding Key="D" Command="{x:Static local:MainWindowCommands.DeferSelected}"/>
+        <KeyBinding Key="Delete" Command="{x:Static local:MainWindowCommands.DeleteSelected}"/>
+    </Window.InputBindings>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static local:MainWindowCommands.ApproveSelected}" Executed="KeyCmd_Approve"/>
+        <CommandBinding Command="{x:Static local:MainWindowCommands.DeferSelected}" Executed="KeyCmd_Defer"/>
+        <CommandBinding Command="{x:Static local:MainWindowCommands.DeleteSelected}" Executed="KeyCmd_Delete"/>
+    </Window.CommandBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ─── Nav Bar ─── -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid Margin="16,8,16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- App branding -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,8">
+                    <Border Width="24" Height="24" CornerRadius="6" Margin="0,0,8,0">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
+                                <GradientStop Color="#0D9498" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <TextBlock Text="SF" Foreground="White" FontWeight="Bold" FontSize="10"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontFamily="{StaticResource AppFont}"/>
+                    </Border>
+                    <TextBlock Text="Smart Filer" Foreground="{DynamicResource TextMutedBrush}"
+                               FontSize="13" FontWeight="Medium" VerticalAlignment="Center"
+                               FontFamily="{StaticResource AppFont}"/>
+                </StackPanel>
+
+                <!-- Tab buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <RadioButton Content="Dashboard" Style="{StaticResource NavTab}" GroupName="Nav"
+                                 IsChecked="True" Checked="Tab_Checked" Tag="0"/>
+                    <RadioButton Style="{StaticResource NavTab}" GroupName="Nav"
+                                 Checked="Tab_Checked" Tag="1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Triage"/>
+                            <Border Background="{DynamicResource AccentBrush}" CornerRadius="9"
+                                    MinWidth="18" Height="18" Padding="5,0" Margin="6,0,0,0">
+                                <TextBlock Text="{Binding PendingFileCount}" Foreground="White"
+                                           FontSize="10" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Content="Settings" Style="{StaticResource NavTab}" GroupName="Nav"
+                                 Checked="Tab_Checked" Tag="2"/>
+                </StackPanel>
+
+                <!-- Theme toggle + Scan button -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="ThemeToggleBtn" Style="{StaticResource BtnGhost}"
+                            Click="ThemeToggle_Click" ToolTip="Toggle light/dark theme"
+                            Padding="10,8" Margin="0,0,6,0">
+                        <TextBlock x:Name="ThemeIcon" Text="☀" FontSize="16" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Style="{StaticResource BtnPrimary}"
+                            Command="{Binding ScanCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⟳" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Scan Now" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ─── Content ─── -->
+        <TabControl x:Name="MainTabControl" Grid.Row="1"
+                    SelectedIndex="{Binding SelectedTabIndex}"
+                    Background="Transparent" BorderThickness="0" Padding="0">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="TabItem">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Style>
+            </TabControl.ItemContainerStyle>
+
+            <!-- Dashboard -->
+            <TabItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24">
+                        <UniformGrid Columns="3" Margin="0,0,0,24">
+                            <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="PENDING FILES" Style="{StaticResource StatLabel}" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding PendingFileCount}" Style="{StaticResource StatValue}" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="across source folders" Foreground="{DynamicResource TextDimBrush}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding FilesMovedThisMonth}" Style="{StaticResource StatValue}" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="FILES SORTED" Style="{StaticResource StatLabel}" Margin="0,8,0,0" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="this month" Foreground="{DynamicResource TextDimBrush}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource StatValue}" Foreground="{DynamicResource AccentBrush}"
+                                               FontFamily="{StaticResource AppFont}">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}">
+                                                <Binding Path="IsScanning"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Text="STATUS" Style="{StaticResource StatLabel}" Margin="0,8,0,0" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource TextDimBrush}"
+                                               FontSize="12" TextTrimming="CharacterEllipsis" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Stale Files Section -->
+                        <TextBlock Text="STALE FILES ON D:" Foreground="{DynamicResource WarningBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <UniformGrid Columns="3" Margin="0,0,0,24">
+                            <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="90 - 180 DAYS" Foreground="{DynamicResource WarningBrush}"
+                                               FontSize="10" FontWeight="Bold" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleCount90to180}" Style="{StaticResource StatValue}"
+                                               Foreground="{DynamicResource WarningBrush}" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleSize90to180}" Foreground="{DynamicResource TextDimBrush}"
+                                               FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="6 MONTHS - 1 YEAR" Foreground="#FB923C"
+                                               FontSize="10" FontWeight="Bold" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleCount6moTo1yr}" Style="{StaticResource StatValue}"
+                                               Foreground="#FB923C" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleSize6moTo1yr}" Foreground="{DynamicResource TextDimBrush}"
+                                               FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="OVER 1 YEAR" Foreground="{DynamicResource DangerBrush}"
+                                               FontSize="10" FontWeight="Bold" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleCountOver1yr}" Style="{StaticResource StatValue}"
+                                               Foreground="{DynamicResource DangerBrush}" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Text="{Binding StaleSizeOver1yr}" Foreground="{DynamicResource TextDimBrush}"
+                                               FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Duplicate Summary -->
+                        <TextBlock Text="DUPLICATES" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,24">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DuplicateGroupCount}" Style="{StaticResource StatValue}"
+                                           Foreground="{DynamicResource AccentBrush}" FontFamily="{StaticResource AppFont}"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Text=" duplicate groups found  ·  " Foreground="{DynamicResource TextMutedBrush}"
+                                           FontSize="13" FontFamily="{StaticResource AppFont}"
+                                           VerticalAlignment="Bottom" Margin="4,0,0,0"/>
+                                <TextBlock Text="{Binding DuplicateSpaceSavings}" Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="13" FontWeight="SemiBold" FontFamily="{StaticResource AppFont}"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Text=" potential savings" Foreground="{DynamicResource TextMutedBrush}"
+                                           FontSize="13" FontFamily="{StaticResource AppFont}"
+                                           VerticalAlignment="Bottom"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="HOW IT WORKS" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <Border Style="{StaticResource Card}">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="13" FontFamily="{StaticResource AppFont}" LineHeight="22">
+                                1. Click Scan Now to scan Downloads, Desktop, and Documents.
+                                <LineBreak/>2. Review files in the Triage tab — Smart Filer suggests destinations.
+                                <LineBreak/>3. Approve, defer, or delete using keyboard (Enter / D / Delete).
+                                <LineBreak/>4. Click Move Selected to sort files to their destinations.
+                                <LineBreak/>5. Smart Filer learns from your choices over time.
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Triage -->
+            <TabItem>
+                <Grid Margin="24,16,24,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>  <!-- Skipped info -->
+                        <RowDefinition Height="Auto"/>  <!-- Keyboard hints -->
+                        <RowDefinition Height="Auto"/>  <!-- Filters -->
+                        <RowDefinition Height="*"/>     <!-- File list + preview -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Skipped info -->
+                    <Border Grid.Row="0" Margin="0,0,0,12"
+                            Background="#0F60A5FA" BorderBrush="#2660A5FA" BorderThickness="1"
+                            CornerRadius="8" Padding="12,8">
+                        <TextBlock Text="{Binding SkippedSummary}" Foreground="{DynamicResource InfoBrush}"
+                                   FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                    </Border>
+
+                    <!-- Keyboard hints -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Keyboard:" Foreground="{DynamicResource TextDimBrush}"
+                                   FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                        <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,4,0">
+                            <TextBlock Text="↵" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextDimBrush}"/>
+                        </Border>
+                        <TextBlock Text="Approve" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="2,0,12,0"/>
+                        <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,4,0">
+                            <TextBlock Text="D" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextDimBrush}"/>
+                        </Border>
+                        <TextBlock Text="Defer" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="2,0,12,0"/>
+                        <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,4,0">
+                            <TextBlock Text="Del" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextDimBrush}"/>
+                        </Border>
+                        <TextBlock Text="Delete" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="2,0,16,0"/>
+                        <TextBlock Text="|" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Selection:" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Button Content="✔ Approve" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="10"
+                                Click="Btn_ApproveSelection" Margin="0,0,4,0"/>
+                        <Button Content="⏸ Defer" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="10"
+                                Click="Btn_DeferSelection" Margin="0,0,4,0"/>
+                        <Button Content="✖ Delete" Style="{StaticResource BtnDanger}" Padding="8,3" FontSize="10"
+                                Click="Btn_DeleteSelection" Margin="0,0,4,0"/>
+                        <Button Content="Select All" Style="{StaticResource BtnGhost}" Padding="6,3" FontSize="10"
+                                Click="Btn_SelectAll" Margin="0,0,4,0"/>
+                        <Button Content="Deselect All" Style="{StaticResource BtnGhost}" Padding="6,3" FontSize="10"
+                                Click="Btn_DeselectAll"/>
+                    </StackPanel>
+
+                    <!-- Category filters -->
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="10,6" Margin="0,0,0,10">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="Filter:" Foreground="{DynamicResource TextDimBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"
+                                           FontFamily="{StaticResource AppFont}" FontWeight="SemiBold"/>
+                                <Button Content="All" Style="{StaticResource BtnGhost}" Padding="4,2" FontSize="10"
+                                        Command="{Binding SelectAllFiltersCommand}" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                                <Button Content="None" Style="{StaticResource BtnGhost}" Padding="4,2" FontSize="10"
+                                        Command="{Binding UnselectAllFiltersCommand}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="|" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <CheckBox Content="Revit" IsChecked="{Binding ShowRevit}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Blender" IsChecked="{Binding ShowBlender}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="AutoCAD" IsChecked="{Binding ShowCad}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <TextBlock Text="|" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                                <CheckBox Content="Word" IsChecked="{Binding ShowWord}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Excel" IsChecked="{Binding ShowExcel}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="PowerPoint" IsChecked="{Binding ShowPowerPoint}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="PDF" IsChecked="{Binding ShowPdf}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Text" IsChecked="{Binding ShowText}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="" Width="42"/>
+                                <CheckBox Content="Images" IsChecked="{Binding ShowImages}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Shortcuts" IsChecked="{Binding ShowShortcuts}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Links" IsChecked="{Binding ShowWebLinks}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Installers" IsChecked="{Binding ShowInstallers}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Archives" IsChecked="{Binding ShowArchives}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Other" IsChecked="{Binding ShowOther}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- File list + preview -->
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="300"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0" Margin="0,0,12,0">
+                            <ListView x:Name="TriageListView"
+                                      ItemsSource="{Binding FilteredFiles}"
+                                      SelectedItem="{Binding SelectedFile}"
+                                      Background="Transparent" BorderThickness="0"
+                                      FontFamily="{StaticResource AppFont}" FontSize="13"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling"
+                                      SelectionMode="Multiple"
+                                      GridViewColumnHeader.Click="GridViewColumnHeader_Click"
+                                      MouseDoubleClick="TriageListView_MouseDoubleClick">
+                                <ListView.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Open File" Click="ContextMenu_OpenFile"/>
+                                        <MenuItem Header="Open Containing Folder" Click="ContextMenu_OpenFolder"/>
+                                        <Separator/>
+                                        <MenuItem Header="Approve (move to destination)" Click="ContextMenu_Approve"/>
+                                        <MenuItem Header="Set Alternative Destination..." Click="ContextMenu_SetAlternative"/>
+                                        <Separator/>
+                                        <MenuItem Header="Defer" Click="ContextMenu_Defer"/>
+                                        <MenuItem Header="Delete" Click="ContextMenu_Delete" Foreground="IndianRed"/>
+                                    </ContextMenu>
+                                </ListView.ContextMenu>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="" Width="28">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Action, Converter={x:Static local:ActionToIconConverter.Instance}}"
+                                                               Foreground="{Binding Action, Converter={x:Static local:ActionToColorConverter.Instance}}"
+                                                               FontSize="14" HorizontalAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="200">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="File" Tag="FileName"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="75">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="Type" Tag="Category"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Category}" FontSize="11"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="180">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="Location" Tag="SourceDirectory"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding SourceDirectory}" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource TextDimBrush}" FontSize="11"
+                                                               ToolTip="{Binding FullPath}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="180">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="Destination" Tag="SuggestedDestination"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding SuggestedDestination}" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+
+                        <!-- Preview -->
+                        <Border Grid.Column="1" Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="FILE PREVIEW" Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                           FontFamily="{StaticResource AppFont}"/>
+                                <Border Background="{DynamicResource BgBrush}" CornerRadius="8"
+                                        Height="120" Margin="0,0,0,16"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <!-- Image preview -->
+                                        <Image Source="{Binding PreviewImage}" Stretch="Uniform" Margin="4"
+                                               Visibility="{Binding PreviewImage, Converter={x:Static local:VisibleIfNotNullConverter.Instance}}"/>
+                                        <!-- Fallback icon -->
+                                        <TextBlock Text="📄" FontSize="36" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" Foreground="{DynamicResource TextDimBrush}"/>
+                                    </Grid>
+                                </Border>
+                                <!-- URL preview for .url files -->
+                                <TextBlock Text="{Binding PreviewUrl}" Foreground="{DynamicResource InfoBrush}"
+                                           FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"
+                                           FontFamily="{StaticResource AppFont}"
+                                           Visibility="{Binding PreviewUrl, Converter={x:Static local:VisibleIfNotEmptyConverter.Instance}}"/>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Name" Foreground="{DynamicResource TextDimBrush}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SelectedFile.FileName}" FontWeight="Medium"
+                                               FontSize="12" TextTrimming="CharacterEllipsis" FontFamily="{StaticResource AppFont}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Type" Foreground="{DynamicResource TextDimBrush}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SelectedFile.Category}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Match" Foreground="{DynamicResource TextDimBrush}" FontSize="12" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedFile.MatchConfidence, StringFormat='{}{0:P0}'}"
+                                               Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="12"
+                                               FontFamily="{StaticResource AppFont}"/>
+                                </Grid>
+                                <Border Background="{DynamicResource AccentSubtleBrush}" CornerRadius="8"
+                                        Padding="10" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="SUGGESTED DESTINATION" Foreground="{DynamicResource AccentBrush}"
+                                                   FontSize="10" FontWeight="Bold" Margin="0,0,0,4" FontFamily="{StaticResource AppFont}"/>
+                                        <TextBlock Text="{Binding SelectedFile.SuggestedDestination}"
+                                                   Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                                                   TextWrapping="Wrap" FontFamily="{StaticResource AppFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Alternative destination -->
+                                <Border Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="8"
+                                        Padding="10" Margin="0,8,0,0"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="ALTERNATIVE LOCATION" Foreground="{DynamicResource WarningBrush}"
+                                                   FontSize="10" FontWeight="Bold" Margin="0,0,0,6" FontFamily="{StaticResource AppFont}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Text="{Binding AlternativeDestination, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="{DynamicResource BgBrush}"
+                                                     Foreground="{DynamicResource TextBrush}"
+                                                     BorderBrush="{DynamicResource BorderBrush}"
+                                                     FontSize="11" Padding="6,4" VerticalAlignment="Center"
+                                                     FontFamily="{StaticResource AppFont}"/>
+                                            <Button Grid.Column="1" Content="..." Style="{StaticResource BtnSecondary}"
+                                                    Padding="8,4" Margin="4,0,0,0"
+                                                    Click="Preview_BrowseAlternative"
+                                                    ToolTip="Browse for folder — applies to all selected files"/>
+                                        </Grid>
+                                        <TextBlock Text="Type a path or browse. This overrides the suggestion above."
+                                                   Foreground="{DynamicResource TextDimBrush}" FontSize="10" Margin="0,4,0,0"
+                                                   FontFamily="{StaticResource AppFont}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Status indicator + action buttons -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SelectedFile.Action, Converter={x:Static local:ActionToIconConverter.Instance}}"
+                                                   Foreground="{Binding SelectedFile.Action, Converter={x:Static local:ActionToColorConverter.Instance}}"
+                                                   FontSize="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding SelectedFile.Action}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{Binding SelectedFile.Action, Converter={x:Static local:ActionToColorConverter.Instance}}"
+                                                   VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="Open" Style="{StaticResource BtnSecondary}"
+                                                Padding="10,5" FontSize="11" Margin="0,0,4,0"
+                                                Click="Preview_OpenFile" ToolTip="Open file in default application"/>
+                                        <Button Content="Delete" Style="{StaticResource BtnDanger}"
+                                                Padding="10,5" FontSize="11"
+                                                Click="Preview_DeleteFile" ToolTip="Mark file for deletion"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Settings -->
+            <TabItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24">
+
+                        <!-- ─── Scan Sources ─── -->
+                        <TextBlock Text="SCAN SOURCES" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <ItemsControl ItemsSource="{Binding ScanSources}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" Margin="0,0,0,6" Padding="12,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       FontFamily="{StaticResource AppFont}"/>
+                                            <TextBlock Grid.Column="1" FontSize="11" Margin="8,0" VerticalAlignment="Center"
+                                                       Text="{Binding Converter={x:Static local:FolderExistsToTextConverter.Instance}}"
+                                                       Foreground="{Binding Converter={x:Static local:FolderExistsToBrushConverter.Instance}}"/>
+                                            <Button Grid.Column="2" Content="&#x2715;" Style="{StaticResource BtnGhost}" Padding="6,4"
+                                                    Command="{Binding DataContext.RemoveSourceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="+ Add Folder..." Style="{StaticResource BtnSecondary}"
+                                Command="{Binding AddSourceCommand}" HorizontalAlignment="Left" Margin="0,4,0,24"/>
+
+                        <!-- ─── Colors ─── -->
+                        <TextBlock Text="COLORS" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16">
+                            <StackPanel>
+                                <!-- Accent Color -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="32"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Accent" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                                               VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomAccent, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="12" FontFamily="{StaticResource AppFont}"
+                                             Background="{DynamicResource SurfaceRaisedBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}" Padding="6,4"/>
+                                    <Border Grid.Column="2" Width="24" Height="24" CornerRadius="4" Margin="8,0,0,0"
+                                            Background="{Binding CustomAccent, Converter={x:Static local:HexToBrushConverter.Instance}}"/>
+                                </Grid>
+                                <!-- Background Color -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="32"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Background" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                                               VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomBg, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="12" FontFamily="{StaticResource AppFont}"
+                                             Background="{DynamicResource SurfaceRaisedBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}" Padding="6,4"/>
+                                    <Border Grid.Column="2" Width="24" Height="24" CornerRadius="4" Margin="8,0,0,0"
+                                            Background="{Binding CustomBg, Converter={x:Static local:HexToBrushConverter.Instance}}"/>
+                                </Grid>
+                                <!-- Surface Color -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="32"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Surface" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                                               VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomSurface, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="12" FontFamily="{StaticResource AppFont}"
+                                             Background="{DynamicResource SurfaceRaisedBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}" Padding="6,4"/>
+                                    <Border Grid.Column="2" Width="24" Height="24" CornerRadius="4" Margin="8,0,0,0"
+                                            Background="{Binding CustomSurface, Converter={x:Static local:HexToBrushConverter.Instance}}"/>
+                                </Grid>
+                                <!-- Text Color -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="32"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Text" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                                               VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding CustomText, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="12" FontFamily="{StaticResource AppFont}"
+                                             Background="{DynamicResource SurfaceRaisedBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}" Padding="6,4"/>
+                                    <Border Grid.Column="2" Width="24" Height="24" CornerRadius="4" Margin="8,0,0,0"
+                                            Background="{Binding CustomText, Converter={x:Static local:HexToBrushConverter.Instance}}"/>
+                                </Grid>
+
+                                <!-- Button row -->
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Apply" Style="{StaticResource BtnPrimary}"
+                                            Command="{Binding ApplyColorsCommand}" Margin="0,0,8,0"/>
+                                    <Button Content="Reset" Style="{StaticResource BtnSecondary}"
+                                            Command="{Binding ResetColorsCommand}" Margin="0,0,8,0"/>
+                                    <Button Content="Save Preset" Style="{StaticResource BtnGhost}"
+                                            Command="{Binding SavePresetCommand}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ─── Saved Presets ─── -->
+                        <TextBlock Text="SAVED PRESETS" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <ItemsControl ItemsSource="{Binding ColorPresets}" Margin="0,0,0,24">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" Margin="0,0,0,6" Padding="12,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="Medium"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0"
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       FontFamily="{StaticResource AppFont}"/>
+                                            <Border Grid.Column="1" Width="16" Height="16" CornerRadius="3" Margin="2,0"
+                                                    Background="{Binding AccentColor, Converter={x:Static local:HexToBrushConverter.Instance}}"
+                                                    ToolTip="{Binding AccentColor}"/>
+                                            <Border Grid.Column="2" Width="16" Height="16" CornerRadius="3" Margin="2,0"
+                                                    Background="{Binding BgColor, Converter={x:Static local:HexToBrushConverter.Instance}}"
+                                                    ToolTip="{Binding BgColor}"/>
+                                            <Border Grid.Column="3" Width="16" Height="16" CornerRadius="3" Margin="2,0"
+                                                    Background="{Binding SurfaceColor, Converter={x:Static local:HexToBrushConverter.Instance}}"
+                                                    ToolTip="{Binding SurfaceColor}"/>
+                                            <Border Grid.Column="4" Width="16" Height="16" CornerRadius="3" Margin="2,0"
+                                                    Background="{Binding TextColor, Converter={x:Static local:HexToBrushConverter.Instance}}"
+                                                    ToolTip="{Binding TextColor}"/>
+                                            <Button Grid.Column="6" Content="Load" Style="{StaticResource BtnSecondary}"
+                                                    Padding="8,3" FontSize="11"
+                                                    Command="{Binding DataContext.LoadPresetCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Grid.Column="7" Content="&#x2715;" Style="{StaticResource BtnGhost}"
+                                                    Padding="6,3" Margin="4,0,0,0"
+                                                    Command="{Binding DataContext.DeletePresetCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- ─── About ─── -->
+                        <TextBlock Text="ABOUT" Foreground="{DynamicResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,12"
+                                   FontFamily="{StaticResource AppFont}"/>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="Smart Filer v1.0" FontWeight="SemiBold" FontSize="16"
+                                           FontFamily="{StaticResource AppFont}" Margin="0,0,0,4"/>
+                                <TextBlock Text="Personal file management for architects."
+                                           Foreground="{DynamicResource TextMutedBrush}" FontSize="13"
+                                           FontFamily="{StaticResource AppFont}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- ─── Action Bar ─── -->
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="24,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                           FontFamily="{StaticResource AppFont}" VerticalAlignment="Center">
+                    <Run Text="{Binding ApprovedCount, StringFormat='Approved: {0}', Mode=OneWay}"/>
+                    <Run Text="  ·  "/>
+                    <Run Text="{Binding DeferredCount, StringFormat='Deferred: {0}', Mode=OneWay}"/>
+                    <Run Text="  ·  "/>
+                    <Run Text="{Binding DeleteCount, StringFormat='Delete: {0}', Mode=OneWay}"/>
+                </TextBlock>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource BtnGhost}" Content="Undo Last"
+                            Command="{Binding UndoCommand}" Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource BtnSecondary}" Content="Approve All"
+                            Command="{Binding ApproveAllCommand}" Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource BtnPrimary}" Content="Move Selected"
+                            Command="{Binding ExecuteMoveCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -5,6 +5,13 @@ Copy this file into each new pyRevit project and fill in the placeholder section
 
 ---
 
+## Python
+
+- **Version:** 3.13.12
+- **Path:** `C:\Users\Grant Teasdale\AppData\Local\Programs\Python\Python313\python.exe`
+
+---
+
 ## Project Overview
 
 <!-- FILL IN: What does this tool do? Is it read-only or does it write to the model? -->
@@ -268,36 +275,29 @@ if __name__ == "__main__":
 
 ---
 
+## Skill Preferences (Revit / Architecture Work)
+
+Only use skills from the Anthropic official set (`anthropics/skills` repo) or gstack. Do not install or run third-party community skills without explicit approval.
+
+- **Parameter exports & schedules:** Use `/xlsx` to create or edit Excel spreadsheets
+- **Client reports & proposals:** Use `/docx` for Word documents
+- **Design presentations:** Use `/pptx` for PowerPoint slide decks
+- **Drawing set packages:** Use `/pdf` to merge, split, or create PDFs
+- **WPF preview pages & HTML prototypes:** Use `/frontend-design` for distinctive, production-grade UI
+- **Theming artifacts:** Use `/theme-factory` to apply consistent colour/font themes to deliverables
+- **Documentation drafts:** Use `/doc-coauthoring` for structured co-authoring of specs and proposals
+- **Code quality:** Use `/simplify` after completing code changes to review for reuse and efficiency
+
+## Design System (TempCleaner)
+Always read `TempCleaner/DESIGN.md` before making any visual or UI decisions for the Temp Cleaner app.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match DESIGN.md.
+
 ## gstack
 
 Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools.
 
-### Available Skills
+### Workflow
 
-- `/office-hours`
-- `/plan-ceo-review`
-- `/plan-eng-review`
-- `/plan-design-review`
-- `/design-consultation`
-- `/review`
-- `/ship`
-- `/land-and-deploy`
-- `/canary`
-- `/benchmark`
-- `/browse`
-- `/qa`
-- `/qa-only`
-- `/design-review`
-- `/setup-browser-cookies`
-- `/setup-deploy`
-- `/retro`
-- `/investigate`
-- `/document-release`
-- `/codex`
-- `/cso`
-- `/autoplan`
-- `/careful`
-- `/freeze`
-- `/guard`
-- `/unfreeze`
-- `/gstack-upgrade`
+Before starting any non-trivial implementation, ask if I want to run the gstack review pipeline (`/plan-ceo-review` → `/plan-eng-review` → `/plan-design-review`) or go straight to coding.

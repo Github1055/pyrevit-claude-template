@@ -20,3 +20,19 @@ __pycache__/
 *.tmp
 *.bak
 *~
+.gstack/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+*.vs/
+*.DotSettings.user
+
+# NuGet
+**/packages/
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/skills/

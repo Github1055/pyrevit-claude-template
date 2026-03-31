@@ -1,0 +1,23 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+# NuGet
+packages/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# SQLite databases (created at runtime)
+*.db
+*.db-wal
+*.db-shm
+
+# Published output
+publish/

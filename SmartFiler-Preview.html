@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Filer — UI Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root, [data-theme="dark"] {
+    --bg: #0F0F14;
+    --surface: #18181F;
+    --surface-raised: #1E1E27;
+    --surface-hover: #252530;
+    --text: #EAEAEF;
+    --text-muted: #6E7185;
+    --text-dim: #4A4C5E;
+    --border: rgba(255,255,255,0.06);
+    --border-subtle: rgba(255,255,255,0.03);
+
+    --accent: #0EA5A9;
+    --accent-glow: rgba(14,165,169,0.15);
+    --accent-subtle: rgba(14,165,169,0.08);
+    --accent-hover: #0CBBC0;
+
+    --success: #34D399;
+    --success-bg: rgba(52,211,153,0.08);
+    --warning: #FBBF24;
+    --warning-bg: rgba(251,191,36,0.08);
+    --danger: #F87171;
+    --danger-bg: rgba(248,113,113,0.08);
+    --info: #60A5FA;
+    --info-bg: rgba(96,165,250,0.08);
+
+    --revit: #4F8EF7;
+    --blender: #F5A623;
+    --cad: #A78BFA;
+    --image: #F472B6;
+    --document: #34D399;
+    --installer: #FB923C;
+    --weblink: #60A5FA;
+    --archive: #94A3B8;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    --font: 'Outfit', 'Segoe UI Variable', system-ui, sans-serif;
+
+    --toggle-bg: #252530;
+    --toggle-knob: #EAEAEF;
+    --toggle-icon-sun: #6E7185;
+    --toggle-icon-moon: #FBBF24;
+  }
+
+  [data-theme="light"] {
+    --bg: #F3F4F6;
+    --surface: #FFFFFF;
+    --surface-raised: #F9FAFB;
+    --surface-hover: #EEF0F3;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --text-dim: #9CA3AF;
+    --border: rgba(0,0,0,0.07);
+    --border-subtle: rgba(0,0,0,0.04);
+
+    --accent: #0D9498;
+    --accent-glow: rgba(13,148,152,0.12);
+    --accent-subtle: rgba(13,148,152,0.06);
+    --accent-hover: #0BA8AD;
+
+    --success: #059669;
+    --success-bg: rgba(5,150,105,0.07);
+    --warning: #D97706;
+    --warning-bg: rgba(217,119,6,0.07);
+    --danger: #DC2626;
+    --danger-bg: rgba(220,38,38,0.06);
+    --info: #2563EB;
+    --info-bg: rgba(37,99,235,0.06);
+
+    --revit: #3B72D9;
+    --blender: #D9900E;
+    --cad: #7C5CCC;
+    --image: #D946A8;
+    --document: #059669;
+    --installer: #E07416;
+    --weblink: #2563EB;
+    --archive: #64748B;
+
+    --toggle-bg: #E5E7EB;
+    --toggle-knob: #FFFFFF;
+    --toggle-icon-sun: #F59E0B;
+    --toggle-icon-moon: #9CA3AF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ─── Window Chrome ─── */
+  .window {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg);
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  .titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .app-icon {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--accent), #0D9498);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .app-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .window-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .window-controls span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surface-hover);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .window-controls span:hover { background: var(--text-dim); }
+  .window-controls span.close:hover { background: var(--danger); }
+
+  /* ─── Navigation Tabs ─── */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 16px 0;
+    background: var(--surface);
+  }
+
+  .nav-tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    transition: all 0.2s;
+    position: relative;
+    font-family: var(--font);
+  }
+
+  .nav-tab:hover { color: var(--text); background: var(--surface-hover); }
+
+  .nav-tab.active {
+    color: var(--accent);
+    background: var(--bg);
+  }
+  .nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .nav-tab .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    margin-left: 6px;
+  }
+
+  .nav-spacer { flex: 1; }
+
+  .scan-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.2s;
+    margin-bottom: 8px;
+  }
+  .scan-btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+  .scan-btn svg { width: 14px; height: 14px; }
+
+  /* ─── Content Area ─── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-hover) transparent;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── Dashboard ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent-glow); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value .unit { font-size: 14px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
+
+  .stat-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  /* Space breakdown bar */
+  .space-breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .space-bar-container {
+    height: 32px;
+    background: var(--bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    margin: 12px 0 16px;
+  }
+
+  .space-segment {
+    height: 100%;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+  .space-segment:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .space-segment:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+
+  .space-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ─── Triage Grid ─── */
+  .info-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--info-bg);
+    border: 1px solid rgba(96,165,250,0.15);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--info);
+  }
+
+  .info-bar svg { flex-shrink: 0; width: 14px; height: 14px; }
+
+  .triage-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    height: calc(100vh - 220px);
+  }
+
+  .file-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .file-list-header {
+    display: grid;
+    grid-template-columns: 32px 1fr 100px 180px 60px;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-raised);
+    align-items: center;
+  }
+
+  .file-list-body {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-hover) transparent;
+  }
+
+  .file-group-label {
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .file-group-label .count {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 9px;
+  }
+
+  .file-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 100px 180px 60px;
+    gap: 8px;
+    padding: 8px 16px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 13px;
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+  .file-row:hover { background: var(--surface-hover); }
+  .file-row.selected { background: var(--accent-subtle); border-left: 2px solid var(--accent); }
+
+  .file-row .checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--text-dim);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .file-row .checkbox.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .file-row .checkbox.checked::after {
+    content: '✓';
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .file-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .file-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .type-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .type-badge.revit { background: rgba(79,142,247,0.15); color: var(--revit); }
+  .type-badge.blender { background: rgba(245,166,35,0.15); color: var(--blender); }
+  .type-badge.cad { background: rgba(167,139,250,0.15); color: var(--cad); }
+  .type-badge.image { background: rgba(244,114,182,0.15); color: var(--image); }
+  .type-badge.document { background: rgba(52,211,153,0.15); color: var(--document); }
+  .type-badge.installer { background: rgba(251,146,60,0.15); color: var(--installer); }
+  .type-badge.weblink { background: rgba(96,165,250,0.15); color: var(--weblink); }
+  .type-badge.archive { background: rgba(148,163,184,0.15); color: var(--archive); }
+
+  .file-size { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .dest-select {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    cursor: pointer;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { background: var(--surface-hover); color: var(--text); }
+  .action-btn.defer:hover { color: var(--warning); }
+  .action-btn.delete:hover { color: var(--danger); }
+
+  /* Preview Panel */
+  .preview-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .preview-thumb {
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: var(--bg);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 48px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  .preview-props {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .preview-prop {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .preview-prop .label { color: var(--text-dim); }
+  .preview-prop .value { color: var(--text); font-weight: 500; }
+
+  .preview-match {
+    padding: 10px 12px;
+    background: var(--accent-subtle);
+    border: 1px solid rgba(14,165,169,0.15);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+  }
+  .preview-match .match-label { color: var(--accent); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .preview-match .match-path { color: var(--text-muted); }
+
+  /* ─── Action Bar ─── */
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .action-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .action-bar-right {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px var(--accent-glow); }
+  .btn-secondary { background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--surface-hover); }
+  .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(248,113,113,0.15); }
+  .btn-danger:hover { background: rgba(248,113,113,0.15); }
+  .btn-ghost { background: none; color: var(--text-muted); }
+  .btn-ghost:hover { color: var(--text); }
+
+  /* ─── Keyboard Hints ─── */
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    font-family: var(--font);
+  }
+
+  /* ─── Stale Files Section ─── */
+  .stale-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stale-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+
+  .stale-age {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .stale-age.recent { color: var(--warning); }
+  .stale-age.old { color: var(--installer); }
+  .stale-age.ancient { color: var(--danger); }
+
+  .stale-count {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stale-size {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ─── Weekly Trend ─── */
+  .trend-chart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .trend-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    margin-top: 12px;
+  }
+
+  .trend-bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .trend-bar {
+    width: 100%;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: height 0.6s ease;
+  }
+
+  .trend-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stats-grid .stat-card { animation: fadeIn 0.4s ease backwards; }
+  .stats-grid .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stats-grid .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stats-grid .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stats-grid .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+  .space-breakdown { animation: fadeIn 0.4s ease 0.25s backwards; }
+  .trend-chart { animation: fadeIn 0.4s ease 0.3s backwards; }
+  .stale-grid .stale-card { animation: fadeIn 0.4s ease backwards; }
+  .stale-grid .stale-card:nth-child(1) { animation-delay: 0.35s; }
+  .stale-grid .stale-card:nth-child(2) { animation-delay: 0.4s; }
+  .stale-grid .stale-card:nth-child(3) { animation-delay: 0.45s; }
+
+  /* ─── Theme Toggle ─── */
+  .theme-toggle {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background: var(--toggle-bg);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.3s, border-color 0.3s;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .theme-toggle .icon {
+    font-size: 12px;
+    line-height: 1;
+    transition: opacity 0.3s;
+    z-index: 1;
+  }
+  .theme-toggle .icon-sun { color: var(--toggle-icon-sun); }
+  .theme-toggle .icon-moon { color: var(--toggle-icon-moon); }
+  .theme-toggle .knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: var(--toggle-knob);
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  [data-theme="light"] .theme-toggle .knob {
+    transform: translateX(24px);
+  }
+
+  /* Smooth transition on theme switch */
+  body, .window, .titlebar, .nav, .content, .action-bar,
+  .stat-card, .space-breakdown, .trend-chart, .stale-card,
+  .file-list, .file-row, .preview-panel, .info-bar,
+  .file-group-label, .file-list-header, .btn,
+  .preview-match, .preview-thumb {
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
+  }
+
+  /* Light-mode specific overrides for elements that use inline styles */
+  [data-theme="light"] .preview-thumb {
+    background: linear-gradient(135deg, #E8F0FE, #DBEAFE) !important;
+  }
+  [data-theme="light"] .preview-thumb div div:last-child {
+    color: var(--text-muted) !important;
+  }
+  [data-theme="light"] .preview-thumb div div:first-child {
+    filter: none;
+  }
+  [data-theme="light"] .app-icon {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  [data-theme="light"] .scan-btn {
+    box-shadow: 0 1px 3px rgba(13,148,152,0.2);
+  }
+  [data-theme="light"] .stat-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+  [data-theme="light"] .dest-select {
+    background: var(--surface-raised);
+  }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface-hover); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .triage-layout { grid-template-columns: 1fr; }
+    .preview-panel { display: none; }
+    .stale-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <!-- Title Bar -->
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <div class="app-icon">SF</div>
+      <span class="app-title">Smart Filer</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark theme">
+        <span class="icon icon-moon">&#9790;</span>
+        <span class="icon icon-sun">&#9728;</span>
+        <div class="knob"></div>
+      </div>
+      <div class="window-controls">
+        <span></span>
+        <span></span>
+        <span class="close"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav">
+    <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="switchTab('triage')">Triage<span class="badge">47</span></button>
+    <button class="nav-tab" onclick="switchTab('duplicates')">Duplicates<span class="badge" style="background:var(--warning)">3</span></button>
+    <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
+    <div class="nav-spacer"></div>
+    <button class="scan-btn">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 8h14M8 1v14"/></svg>
+      Scan Now
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Dashboard Tab -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Pending Files</div>
+          <div class="stat-value">47</div>
+          <div class="stat-subtitle">across 3 source folders</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">2.3<span class="unit">GB</span></div>
+          <div class="stat-label" style="margin-bottom:0; margin-top: 8px;">Space to Recover</div>
+          <div class="stat-subtitle">from stale + duplicates</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">142</div>
+          <div class="stat-label" style="margin-bottom:0; margin-top: 8px;">Files Sorted</div>
+          <div class="stat-subtitle">this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">94<span class="unit">%</span></div>
+          <div class="stat-label" style="margin-bottom:0; margin-top: 8px;">Suggestion Accuracy</div>
+          <div class="stat-subtitle">based on your approvals</div>
+        </div>
+      </div>
+
+      <div class="space-breakdown">
+        <div class="section-title">Space Breakdown by Category</div>
+        <div class="space-bar-container">
+          <div class="space-segment" style="width:35%; background: var(--revit);"></div>
+          <div class="space-segment" style="width:20%; background: var(--document);"></div>
+          <div class="space-segment" style="width:15%; background: var(--image);"></div>
+          <div class="space-segment" style="width:12%; background: var(--blender);"></div>
+          <div class="space-segment" style="width:8%; background: var(--installer);"></div>
+          <div class="space-segment" style="width:10%; background: var(--archive);"></div>
+        </div>
+        <div class="space-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--revit)"></div>Revit (840 MB)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--document)"></div>Documents (480 MB)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--image)"></div>Images (360 MB)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blender)"></div>Blender (288 MB)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--installer)"></div>Installers (192 MB)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--archive)"></div>Archives (240 MB)</div>
+        </div>
+      </div>
+
+      <div class="trend-chart">
+        <div class="section-title">Weekly Activity</div>
+        <div class="trend-bars">
+          <div class="trend-bar-group"><div class="trend-bar" style="height:40%; background: var(--accent);"></div><span class="trend-label">W1</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:65%; background: var(--accent);"></div><span class="trend-label">W2</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:45%; background: var(--accent);"></div><span class="trend-label">W3</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:80%; background: var(--accent);"></div><span class="trend-label">W4</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:55%; background: var(--accent);"></div><span class="trend-label">W5</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:90%; background: var(--accent);"></div><span class="trend-label">W6</span></div>
+          <div class="trend-bar-group"><div class="trend-bar" style="height:35%; background: var(--accent); opacity: 0.5;"></div><span class="trend-label">Now</span></div>
+        </div>
+      </div>
+
+      <div class="section-title">Stale Files on D:</div>
+      <div class="stale-grid">
+        <div class="stale-card">
+          <div class="stale-age recent">90 — 180 Days</div>
+          <div class="stale-count">28</div>
+          <div class="stale-size">640 MB</div>
+        </div>
+        <div class="stale-card">
+          <div class="stale-age old">6 Months — 1 Year</div>
+          <div class="stale-count">63</div>
+          <div class="stale-size">1.2 GB</div>
+        </div>
+        <div class="stale-card">
+          <div class="stale-age ancient">Over 1 Year</div>
+          <div class="stale-count">112</div>
+          <div class="stale-size">3.8 GB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Triage Tab -->
+    <div id="tab-triage" class="tab-panel">
+      <div class="info-bar">
+        <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
+        Scanned 64 files. 17 skipped (in use or access denied). <span style="opacity:0.6; cursor:pointer; text-decoration:underline;">Show skipped</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 12px;">
+        <span style="font-size:12px; color:var(--text-dim);">Keyboard:</span>
+        <span class="kbd">↵</span><span style="font-size:11px;color:var(--text-dim)">Approve</span>
+        <span class="kbd">D</span><span style="font-size:11px;color:var(--text-dim)">Defer</span>
+        <span class="kbd">⌫</span><span style="font-size:11px;color:var(--text-dim)">Delete</span>
+        <span class="kbd">Tab</span><span style="font-size:11px;color:var(--text-dim)">Next</span>
+        <span class="kbd">1</span>-<span class="kbd">9</span><span style="font-size:11px;color:var(--text-dim)">Quick assign</span>
+      </div>
+
+      <div class="triage-layout">
+        <div class="file-list">
+          <div class="file-list-header">
+            <span></span>
+            <span>File</span>
+            <span>Size</span>
+            <span>Destination</span>
+            <span></span>
+          </div>
+          <div class="file-list-body">
+            <div class="file-group-label">Project Match <span class="count">4</span></div>
+            <div class="file-row selected">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit">RVT</span><span>001089-Brakes-Grantham-GA.rvt</span></div>
+              <div class="file-size">48.2 MB</div>
+              <div class="dest-select">D:\001089 BRAKES GRANTHAM</div>
+              <div class="file-actions"><button class="action-btn defer" title="Defer">⏸</button><button class="action-btn delete" title="Delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit">RFA</span><span>SBH-Door-Type-04.rfa</span></div>
+              <div class="file-size">2.1 MB</div>
+              <div class="dest-select">D:\D Materials\Families</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge blender">BLEND</span><span>Oakwood-exterior-v3.blend</span></div>
+              <div class="file-size">124.5 MB</div>
+              <div class="dest-select">D:\D Blender3D\Oakwood</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox"></div>
+              <div class="file-name"><span class="type-badge cad">DWG</span><span>001216-HuntersFrankau-site.dwg</span></div>
+              <div class="file-size">8.7 MB</div>
+              <div class="dest-select">D:\001216 HUNTERS & FRANKAU</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+
+            <div class="file-group-label">Downloads <span class="count">6</span></div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge document">PDF</span><span>Kingspan-KS1000RW-datasheet.pdf</span></div>
+              <div class="file-size">3.4 MB</div>
+              <div class="dest-select">D:\D Materials\Specs</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox"></div>
+              <div class="file-name"><span class="type-badge image">PNG</span><span>Screenshot 2026-03-28 143022.png</span></div>
+              <div class="file-size">1.8 MB</div>
+              <div class="dest-select">D:\Downloads Utils\Images</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge installer">EXE</span><span>Enscape-4.2.1-Setup.exe</span></div>
+              <div class="file-size">380 MB</div>
+              <div class="dest-select">D:\Downloads Apps</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox"></div>
+              <div class="file-name"><span class="type-badge weblink">URL</span><span>Twinmotion 2026.url</span></div>
+              <div class="file-size">1 KB</div>
+              <div class="dest-select">D:\Downloads Utils\Links</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge archive">ZIP</span><span>project-assets-march.zip</span></div>
+              <div class="file-size">56 MB</div>
+              <div class="dest-select">D:\Downloads Utils\Archives</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox"></div>
+              <div class="file-name"><span class="type-badge document">XLSX</span><span>Bacton-Transport-schedule.xlsx</span></div>
+              <div class="file-size">245 KB</div>
+              <div class="dest-select">D:\BACTON TRANSPORT SUFFOLK</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button><button class="action-btn delete">✕</button></div>
+            </div>
+
+            <div class="file-group-label" style="color: var(--danger); background: var(--danger-bg);">Safe to Delete <span class="count" style="background:var(--danger)">5</span></div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit" style="opacity:0.6">BAK</span><span>001089-Brakes.rvt.0001</span></div>
+              <div class="file-size">47.8 MB</div>
+              <div class="dest-select" style="color:var(--danger)">🗑 Delete</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit" style="opacity:0.6">BAK</span><span>001089-Brakes.rvt.0002</span></div>
+              <div class="file-size">47.8 MB</div>
+              <div class="dest-select" style="color:var(--danger)">🗑 Delete</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge blender" style="opacity:0.6">BAK</span><span>Oakwood-exterior-v3.blend1</span></div>
+              <div class="file-size">124 MB</div>
+              <div class="dest-select" style="color:var(--danger)">🗑 Delete</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit" style="opacity:0.6">BAK</span><span>SBH-Door-Type-04.rfa.0001</span></div>
+              <div class="file-size">2.0 MB</div>
+              <div class="dest-select" style="color:var(--danger)">🗑 Delete</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button></div>
+            </div>
+            <div class="file-row">
+              <div class="checkbox checked"></div>
+              <div class="file-name"><span class="type-badge revit" style="opacity:0.6">BAK</span><span>SBH-Door-Type-04.rfa.0002</span></div>
+              <div class="file-size">2.0 MB</div>
+              <div class="dest-select" style="color:var(--danger)">🗑 Delete</div>
+              <div class="file-actions"><button class="action-btn defer">⏸</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel">
+          <div class="section-title">File Preview</div>
+          <div class="preview-thumb" style="background: linear-gradient(135deg, #1a2744, #0f1a2e); font-size: 32px; color: var(--revit);">
+            <div style="text-align:center;">
+              <div style="font-size:40px; margin-bottom:4px;">📐</div>
+              <div style="font-size:11px; color:var(--text-dim);">Revit Project</div>
+            </div>
+          </div>
+          <div class="preview-props">
+            <div class="preview-prop"><span class="label">Name</span><span class="value">001089-Brakes-Grantham-GA.rvt</span></div>
+            <div class="preview-prop"><span class="label">Type</span><span class="value" style="color:var(--revit)">Revit Project (.rvt)</span></div>
+            <div class="preview-prop"><span class="label">Size</span><span class="value">48.2 MB</span></div>
+            <div class="preview-prop"><span class="label">Modified</span><span class="value">2026-03-28 14:30</span></div>
+            <div class="preview-prop"><span class="label">Source</span><span class="value">C:\Users\...\Downloads</span></div>
+          </div>
+          <div class="preview-match">
+            <div class="match-label">Project Match (87%)</div>
+            <div class="match-path">D:\001089 BRAKES GRANTHAM - DOCO</div>
+          </div>
+          <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">
+            Tokens matched: <span style="color:var(--accent)">001089</span>, <span style="color:var(--accent)">BRAKES</span>, <span style="color:var(--accent)">GRANTHAM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicates Tab -->
+    <div id="tab-duplicates" class="tab-panel">
+      <div class="section-title">Duplicate Groups (Source Directories)</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="type-badge document">PDF</span>
+              <span style="font-weight:600;">Kingspan-KS1000RW-datasheet.pdf</span>
+              <span style="font-size:12px; color:var(--text-muted);">3.4 MB each</span>
+            </div>
+            <span style="font-size:12px; color:var(--warning); font-weight:600;">2 copies</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--accent-subtle); border-radius:var(--radius-md); border:1px solid rgba(14,165,169,0.15);">
+              <span style="color:var(--accent); font-weight:700; font-size:11px;">KEEP</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Downloads\Kingspan-KS1000RW-datasheet.pdf</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 28, 2026</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-bg); border-radius:var(--radius-md); border:1px solid rgba(248,113,113,0.1);">
+              <span style="color:var(--danger); font-weight:700; font-size:11px;">DELETE</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Desktop\Kingspan-KS1000RW-datasheet.pdf</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 15, 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="type-badge image">PNG</span>
+              <span style="font-weight:600;">pEN.png</span>
+              <span style="font-size:12px; color:var(--text-muted);">245 KB each</span>
+            </div>
+            <span style="font-size:12px; color:var(--warning); font-weight:600;">2 copies</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--accent-subtle); border-radius:var(--radius-md); border:1px solid rgba(14,165,169,0.15);">
+              <span style="color:var(--accent); font-weight:700; font-size:11px;">KEEP</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Desktop\pEN.png</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 30, 2026</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-bg); border-radius:var(--radius-md); border:1px solid rgba(248,113,113,0.1);">
+              <span style="color:var(--danger); font-weight:700; font-size:11px;">DELETE</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Documents\pEN.png</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 22, 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="type-badge image">JPG</span>
+              <span style="font-weight:600;">XbkN9ovPzF.jpg</span>
+              <span style="font-size:12px; color:var(--text-muted);">1.2 MB each</span>
+            </div>
+            <span style="font-size:12px; color:var(--warning); font-weight:600;">3 copies</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--accent-subtle); border-radius:var(--radius-md); border:1px solid rgba(14,165,169,0.15);">
+              <span style="color:var(--accent); font-weight:700; font-size:11px;">KEEP</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Desktop\XbkN9ovPzF.jpg</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 29, 2026</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-bg); border-radius:var(--radius-md); border:1px solid rgba(248,113,113,0.1);">
+              <span style="color:var(--danger); font-weight:700; font-size:11px;">DELETE</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Downloads\XbkN9ovPzF.jpg</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 20, 2026</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-bg); border-radius:var(--radius-md); border:1px solid rgba(248,113,113,0.1);">
+              <span style="color:var(--danger); font-weight:700; font-size:11px;">DELETE</span>
+              <span style="font-size:12px; flex:1;">C:\Users\...\Documents\XbkN9ovPzF.jpg</span>
+              <span style="font-size:11px; color:var(--text-dim);">Mar 18, 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="section-title">Scan Sources</div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <span style="flex:1; font-size:13px;">C:\Users\Grant Teasdale\Downloads</span>
+          <span style="font-size:11px; color:var(--success);">Active</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <span style="flex:1; font-size:13px;">C:\Users\Grant Teasdale\Desktop</span>
+          <span style="font-size:11px; color:var(--success);">Active</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <span style="flex:1; font-size:13px;">C:\Users\Grant Teasdale\Documents</span>
+          <span style="font-size:11px; color:var(--success);">Active</span>
+        </div>
+      </div>
+
+      <div class="section-title">Project Aliases</div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <span style="font-weight:600; color:var(--accent); min-width:60px;">SBH</span>
+          <span style="color:var(--text-dim);">=</span>
+          <span style="flex:1; font-size:13px; color:var(--text-muted);">Sworder Belcher Holt</span>
+          <button class="action-btn delete">✕</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);">
+          <span style="font-weight:600; color:var(--accent); min-width:60px;">CPL</span>
+          <span style="color:var(--text-dim);">=</span>
+          <span style="flex:1; font-size:13px; color:var(--text-muted);">CPL Office</span>
+          <button class="action-btn delete">✕</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); border-style:dashed; cursor:pointer;">
+          <span style="color:var(--text-dim); font-size:13px;">+ Add alias...</span>
+        </div>
+      </div>
+
+      <div class="section-title">Stale File Threshold</div>
+      <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:24px;">
+        <span style="font-size:13px;">Flag files older than</span>
+        <span style="padding:4px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); font-weight:600; color:var(--accent);">90</span>
+        <span style="font-size:13px;">days</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <div class="action-bar-left">
+      <span>12 files selected</span>
+      <span style="color:var(--text-dim);">|</span>
+      <span>Move: 6 &middot; Delete: 5 &middot; Deferred: 1</span>
+    </div>
+    <div class="action-bar-right">
+      <button class="btn btn-ghost">Undo Last</button>
+      <button class="btn btn-secondary">Defer All</button>
+      <button class="btn btn-danger">Delete Selected (5)</button>
+      <button class="btn btn-primary">Move Selected (6)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Theme toggle
+  function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('smartfiler-theme', next);
+  }
+
+  // Restore saved theme
+  (function() {
+    const saved = localStorage.getItem('smartfiler-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // Interactive checkboxes
+  document.querySelectorAll('.checkbox').forEach(cb => {
+    cb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cb.classList.toggle('checked');
+    });
+  });
+
+  // Interactive file rows
+  document.querySelectorAll('.file-row').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.file-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+    });
+  });
+</script>
+
+</body>
+</html>
