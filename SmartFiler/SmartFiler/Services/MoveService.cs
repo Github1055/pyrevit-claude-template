@@ -107,7 +107,11 @@ namespace SmartFiler.Services
                     continue;
                 }
 
-                if (!File.Exists(file.FullPath))
+                bool sourceExists = file.IsDirectory
+                    ? Directory.Exists(file.FullPath)
+                    : File.Exists(file.FullPath);
+
+                if (!sourceExists)
                 {
                     skippedCount++;
                     continue;
@@ -115,18 +119,26 @@ namespace SmartFiler.Services
 
                 try
                 {
-                    var destDir = Path.GetDirectoryName(effectiveDest)!;
+                    // For directories, effectiveDest is the parent folder; build the full target path.
+                    var fullMoveDest = file.IsDirectory
+                        ? Path.Combine(effectiveDest, file.FileName)
+                        : effectiveDest;
+
+                    var destDir = Path.GetDirectoryName(fullMoveDest)!;
                     Directory.CreateDirectory(destDir);
 
-                    var destPath = effectiveDest;
+                    var destPath = fullMoveDest;
 
                     // Handle name conflicts
-                    if (File.Exists(destPath))
+                    if (file.IsDirectory ? Directory.Exists(destPath) : File.Exists(destPath))
                     {
                         destPath = AppendTimestampSuffix(destPath);
                     }
 
-                    File.Move(file.FullPath, destPath);
+                    if (file.IsDirectory)
+                        Directory.Move(file.FullPath, destPath);
+                    else
+                        File.Move(file.FullPath, destPath);
 
                     // Update journal
                     await _batchJournal.UpdateStatusAsync(batchId, file.FullPath, "MOVED");
@@ -167,13 +179,21 @@ namespace SmartFiler.Services
                 {
                     try
                     {
-                        if (!File.Exists(file.FullPath))
+                        bool deleteSourceExists = file.IsDirectory
+                            ? Directory.Exists(file.FullPath)
+                            : File.Exists(file.FullPath);
+
+                        if (!deleteSourceExists)
                         {
                             skippedCount++;
                             continue;
                         }
 
-                        File.Delete(file.FullPath);
+                        if (file.IsDirectory)
+                            Directory.Delete(file.FullPath, recursive: true);
+                        else
+                            File.Delete(file.FullPath);
+
                         deletedCount++;
                         bytesDeleted += file.SizeBytes;
                     }
@@ -240,10 +260,13 @@ namespace SmartFiler.Services
             {
                 try
                 {
-                    if (!File.Exists(record.DestPath))
+                    bool destIsDir = Directory.Exists(record.DestPath);
+                    bool destIsFile = !destIsDir && File.Exists(record.DestPath);
+
+                    if (!destIsDir && !destIsFile)
                     {
                         failedCount++;
-                        failures.Add($"File no longer at destination: {record.DestPath}");
+                        failures.Add($"Item no longer at destination: {record.DestPath}");
                         continue;
                     }
 
@@ -253,7 +276,11 @@ namespace SmartFiler.Services
                         Directory.CreateDirectory(sourceDir);
                     }
 
-                    File.Move(record.DestPath, record.SourcePath);
+                    if (destIsDir)
+                        Directory.Move(record.DestPath, record.SourcePath);
+                    else
+                        File.Move(record.DestPath, record.SourcePath);
+
                     restoredCount++;
                 }
                 catch (IOException ex)

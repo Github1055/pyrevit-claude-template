@@ -15,26 +15,35 @@ namespace SmartFiler.Services
     {
         private static readonly Dictionary<FileCategory, string> CategoryDefaults = new()
         {
+            // --- Revit (CPL office resources) ---
             { FileCategory.RevitProject,      @"D:\D CPL OFFICE\05 REVIT\000_Reference Projects" },
             { FileCategory.RevitFamily,       @"D:\D CPL OFFICE\05 REVIT\000_Revit Families" },
             { FileCategory.RevitTemplate,     @"D:\D CPL OFFICE\05 REVIT\000_ Revit Template" },
-            { FileCategory.Blender,           @"D:\D Blender3D" },
+
+            // --- 3D / CAD applications ---
+            { FileCategory.Blender,           @"D:\D Blender3D\_My Projects" },
             { FileCategory.AutoCad,           @"D:\D Autocad" },
             { FileCategory.AutoCadBackup,     @"D:\D Autocad\Backups" },
             { FileCategory.Rhino,             @"D:\D Rhino3D" },
             { FileCategory.Plasticity,        @"D:\D Plasticity3D" },
-            { FileCategory.ThreeDInterchange, @"D:\D Blender3D\Imports" },
+            { FileCategory.FreeCad,           @"D:\D Freecad" },
+            { FileCategory.ThreeDInterchange, @"D:\D Blender3D\Downloads" },
+
+            // --- Documents & media ---
             { FileCategory.MsWord,            @"D:\Downloads Utils\Docs" },
             { FileCategory.MsExcel,           @"D:\Downloads Utils\Docs" },
-            { FileCategory.MsPowerPoint,      @"D:\Downloads Utils\Docs" },
+            { FileCategory.MsPowerPoint,      @"D:\Power Point" },
             { FileCategory.Pdf,               @"D:\Downloads Utils\Docs" },
             { FileCategory.TextFile,          @"D:\Downloads Utils\Docs" },
             { FileCategory.Image,             @"D:\Downloads Utils\Images" },
             { FileCategory.WebLink,           @"D:\Downloads Utils\Links" },
+
+            // --- Installers & system ---
             { FileCategory.Installer,         @"D:\Downloads Apps" },
             { FileCategory.Driver,            @"D:\Downloads Drivers" },
             { FileCategory.Archive,           @"D:\Downloads Utils\Archives" },
             { FileCategory.Shortcut,          @"D:\Downloads Utils\Shortcuts" },
+            { FileCategory.Folder,            @"D:\" },
             { FileCategory.Other,             @"D:\Downloads Utils\Other" }
         };
 
@@ -43,7 +52,8 @@ namespace SmartFiler.Services
             FileCategory.RevitBackup,
             FileCategory.RfaBackup,
             FileCategory.BlenderBackup,
-            FileCategory.AutoCadBackup
+            FileCategory.AutoCadBackup,
+            FileCategory.FreeCadBackup
         };
 
         private static readonly HashSet<FileCategory> RevitCategories = new()
@@ -101,6 +111,37 @@ namespace SmartFiler.Services
             {
                 files[i] = await SuggestForFileAsync(files[i], projectFolders, deferredSet, extensionFrequency);
             }
+        }
+
+        /// <summary>
+        /// Returns up to <paramref name="count"/> alternative destination paths for a file,
+        /// excluding the file's current <see cref="ScannedFile.SuggestedDestination"/>.
+        /// Draws from fuzzy project folder matches ranked by score, then category-default paths.
+        /// </summary>
+        public async Task<List<string>> GetAlternativeSuggestionsAsync(ScannedFile file, int count = 3)
+        {
+            var projectFolders = await _projectIndexer.GetProjectFoldersAsync();
+            var primary = file.SuggestedDestination;
+
+            // Get top fuzzy matches (use a low threshold to surface alternatives)
+            var topMatches = await _fuzzyMatcher.FindTopMatchesAsync(file.FileName, projectFolders, count + 1, threshold: 0.1);
+
+            var alternatives = topMatches
+                .Select(m => m.FolderPath)
+                .Where(p => !string.Equals(p, primary, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // Pad with category-default fallback if we don't have enough
+            if (alternatives.Count < count && CategoryDefaults.TryGetValue(file.Category, out var defaultDest))
+            {
+                if (!string.Equals(defaultDest, primary, StringComparison.OrdinalIgnoreCase)
+                    && !alternatives.Any(a => string.Equals(a, defaultDest, StringComparison.OrdinalIgnoreCase)))
+                {
+                    alternatives.Add(defaultDest);
+                }
+            }
+
+            return alternatives.Take(count).ToList();
         }
 
         /// <summary>

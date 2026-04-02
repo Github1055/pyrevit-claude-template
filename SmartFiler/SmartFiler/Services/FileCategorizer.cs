@@ -30,8 +30,11 @@ namespace SmartFiler.Services
         private static readonly Regex AutoCadBackupRegex =
             new(@"\.bak$|\.sv\$$|\.ac\$$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        private static readonly Regex FreeCadBackupRegex =
+            new(@"\.FCBak$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         private static readonly HashSet<string> ThreeDInterchangeExtensions =
-            new(StringComparer.OrdinalIgnoreCase) { ".fbx", ".obj", ".glb", ".gltf", ".stl" };
+            new(StringComparer.OrdinalIgnoreCase) { ".fbx", ".obj", ".glb", ".gltf", ".stl", ".3mf" };
 
         private static readonly HashSet<string> MsWordExtensions =
             new(StringComparer.OrdinalIgnoreCase) { ".docx", ".doc", ".docm", ".dotx", ".dotm", ".rtf" };
@@ -115,6 +118,13 @@ namespace SmartFiler.Services
             if (ext == ".plasticity")
                 return FileCategory.Plasticity;
 
+            // --- FreeCad ---
+            if (FreeCadBackupRegex.IsMatch(fileName))
+                return FileCategory.FreeCadBackup;
+
+            if (ext == ".fcstd")
+                return FileCategory.FreeCad;
+
             if (ThreeDInterchangeExtensions.Contains(ext))
                 return FileCategory.ThreeDInterchange;
 
@@ -182,7 +192,8 @@ namespace SmartFiler.Services
             for (int i = 0; i < files.Count; i++)
             {
                 var f = files[i];
-                f.Category = Categorize(f.FileName);
+                if (!f.IsDirectory)
+                    f.Category = Categorize(f.FileName);
                 files[i] = f;
             }
         }

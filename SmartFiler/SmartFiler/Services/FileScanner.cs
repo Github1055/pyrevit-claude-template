@@ -115,6 +115,44 @@ namespace SmartFiler.Services
                             skippedCount++;
                         }
                     }
+
+                    // Also enumerate subdirectories (top-level only) so that folders on the
+                    // Desktop/Downloads are included in the triage list alongside files.
+                    IEnumerable<string> subDirs;
+                    try
+                    {
+                        subDirs = Directory.EnumerateDirectories(directory, "*", SearchOption.TopDirectoryOnly);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var dirPath in subDirs)
+                    {
+                        try
+                        {
+                            var info = new DirectoryInfo(dirPath);
+                            files.Add(new ScannedFile
+                            {
+                                FullPath = info.FullName,
+                                FileName = info.Name,
+                                Extension = "",
+                                Category = FileCategory.Folder,
+                                SizeBytes = 0,
+                                LastModified = info.LastWriteTime,
+                                IsDirectory = true,
+                                IsLocked = false
+                            });
+                        }
+                        catch (PathTooLongException)
+                        {
+                            skippedCount++;
+                            skippedReasons.Add($"Path too long: {Path.GetFileName(dirPath)}");
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            skippedCount++;
+                        }
+                    }
                 }
 
                 sw.Stop();

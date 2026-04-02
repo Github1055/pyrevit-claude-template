@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -69,6 +70,7 @@ public partial class MainViewModel : ObservableObject
         _showWebLinks = _settings.Settings.FilterWebLinks;
         _showInstallers = _settings.Settings.FilterInstallers;
         _showArchives = _settings.Settings.FilterArchives;
+        _showFolders = _settings.Settings.FilterFolders;
         _showOther = _settings.Settings.FilterOther;
     }
 
@@ -100,6 +102,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _showWebLinks = true;
     [ObservableProperty] private bool _showInstallers = true;
     [ObservableProperty] private bool _showArchives = true;
+    [ObservableProperty] private bool _showFolders = true;
     [ObservableProperty] private bool _showOther = true;
 
     // Triage
@@ -147,6 +150,12 @@ public partial class MainViewModel : ObservableObject
 
     // Alternative destination (user override for selected file)
     [ObservableProperty] private string _alternativeDestination = "";
+
+    // Alternative suggestions shown in the right-click menu on the suggested destination
+    public ObservableCollection<string> AlternativeSuggestions { get; } = [];
+
+    // ─── Location filters (one per scan source, populated after scan) ───
+    public ObservableCollection<LocationFilterItem> LocationFilters { get; } = [];
 
     // Preview
     [ObservableProperty] private BitmapImage? _previewImage;
@@ -210,6 +219,49 @@ public partial class MainViewModel : ObservableObject
             }
 
             PendingFileCount = result.Files.Count;
+
+            // Rebuild location filters from distinct source directories in this scan
+            foreach (var item in LocationFilters)
+                item.SelectionChanged -= OnLocationFilterChanged;
+            LocationFilters.Clear();
+
+            var distinctDirs = result.Files
+                .Select(f => f.SourceDirectory)
+                .Where(d => !string.IsNullOrEmpty(d))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(d => d)
+                .ToList();
+
+            // Build display names — disambiguate any folders that share the same leaf name
+            var leafNames = distinctDirs
+                .Select(d => Path.GetFileName(d) is { Length: > 0 } n ? n : d)
+                .ToList();
+
+            for (int i = 0; i < distinctDirs.Count; i++)
+            {
+                var dir = distinctDirs[i];
+                var leaf = leafNames[i];
+                string displayName;
+
+                if (leafNames.Count(n => n.Equals(leaf, StringComparison.OrdinalIgnoreCase)) > 1)
+                {
+                    // Ambiguous name — append the parent folder for context
+                    var parent = Path.GetFileName(Path.GetDirectoryName(dir) ?? "");
+                    displayName = string.IsNullOrEmpty(parent) ? dir : $"{leaf} ({parent})";
+                }
+                else
+                {
+                    displayName = leaf;
+                }
+
+                var item = new LocationFilterItem
+                {
+                    DisplayName = displayName,
+                    DirectoryPath = dir
+                };
+                item.SelectionChanged += OnLocationFilterChanged;
+                LocationFilters.Add(item);
+            }
 
             // Build the filtered view
             RefreshFilteredFiles();
@@ -324,8 +376,11 @@ public partial class MainViewModel : ObservableObject
             var processed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var f in toProcess)
             {
-                if (System.IO.File.Exists(f.FullPath))
-                    continue; // File still exists — it wasn't moved/deleted (failed)
+                bool stillExists = f.IsDirectory
+                    ? System.IO.Directory.Exists(f.FullPath)
+                    : System.IO.File.Exists(f.FullPath);
+                if (stillExists)
+                    continue; // Item still exists — it wasn't moved/deleted (failed)
                 processed.Add(f.FullPath);
             }
 
@@ -532,7 +587,7 @@ public partial class MainViewModel : ObservableObject
     {
         ShowRevit = ShowBlender = ShowCad = ShowWord = ShowExcel = ShowPowerPoint =
         ShowPdf = ShowText = ShowImages = ShowShortcuts = ShowWebLinks =
-        ShowInstallers = ShowArchives = ShowOther = true;
+        ShowInstallers = ShowArchives = ShowFolders = ShowOther = true;
     }
 
     [RelayCommand]
@@ -540,7 +595,7 @@ public partial class MainViewModel : ObservableObject
     {
         ShowRevit = ShowBlender = ShowCad = ShowWord = ShowExcel = ShowPowerPoint =
         ShowPdf = ShowText = ShowImages = ShowShortcuts = ShowWebLinks =
-        ShowInstallers = ShowArchives = ShowOther = false;
+        ShowInstallers = ShowArchives = ShowFolders = ShowOther = false;
     }
 
     // ─── Settings Commands ───
@@ -721,6 +776,16 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Applies an alternative suggestion as the destination for the selected file.
+    /// </summary>
+    [RelayCommand]
+    private void SelectAlternativeSuggestion(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        AlternativeDestination = path;
+    }
+
     partial void OnSelectedFileChanged(ScannedFile? value)
     {
         PreviewImage = null;
@@ -729,6 +794,7 @@ public partial class MainViewModel : ObservableObject
         PreviewCreated = "";
         PreviewModified = "";
         AlternativeDestination = "";
+        AlternativeSuggestions.Clear();
         IsSelectedDeferred = value?.Action == FileAction.Deferred;
 
         if (value == null) return;
@@ -736,23 +802,63 @@ public partial class MainViewModel : ObservableObject
         // Load existing alternative destination if set
         AlternativeDestination = value.AlternativeDestination ?? "";
 
-        // Load thumbnail for images
-        PreviewImage = PreviewService.LoadThumbnail(value.FullPath);
-
-        // Parse URL for .url files
-        PreviewUrl = PreviewService.ParseUrlShortcut(value.FullPath) ?? "";
-
-        // Load file properties
-        var props = PreviewService.GetProperties(value.FullPath);
-        if (props != null)
+        if (!value.IsDirectory)
         {
-            PreviewDirectory = props.Directory;
-            PreviewCreated = props.Created.ToString("yyyy-MM-dd HH:mm");
-            PreviewModified = props.Modified.ToString("yyyy-MM-dd HH:mm");
+            // Load thumbnail for images
+            PreviewImage = PreviewService.LoadThumbnail(value.FullPath);
+
+            // Parse URL for .url files
+            PreviewUrl = PreviewService.ParseUrlShortcut(value.FullPath) ?? "";
+
+            // Load file properties
+            var props = PreviewService.GetProperties(value.FullPath);
+            if (props != null)
+            {
+                PreviewDirectory = props.Directory;
+                PreviewCreated = props.Created.ToString("yyyy-MM-dd HH:mm");
+                PreviewModified = props.Modified.ToString("yyyy-MM-dd HH:mm");
+            }
         }
+        else
+        {
+            // For folders, show the parent directory and modification time
+            PreviewDirectory = System.IO.Path.GetDirectoryName(value.FullPath) ?? "";
+            PreviewModified = value.LastModified.ToString("yyyy-MM-dd HH:mm");
+        }
+
+        // Load alternative suggestions in the background
+        _ = LoadAlternativeSuggestionsAsync(value);
+    }
+
+    private async Task LoadAlternativeSuggestionsAsync(ScannedFile file)
+    {
+        try
+        {
+            var alternatives = await _suggestionEngine.GetAlternativeSuggestionsAsync(file);
+            AlternativeSuggestions.Clear();
+            foreach (var alt in alternatives)
+                AlternativeSuggestions.Add(alt);
+        }
+        catch { /* Best-effort */ }
     }
 
     // ─── Filter change handlers ───
+
+    private void OnLocationFilterChanged(object? sender, EventArgs e) => RefreshFilteredFiles();
+
+    [RelayCommand]
+    private void SelectAllLocations()
+    {
+        foreach (var item in LocationFilters)
+            item.IsSelected = true;
+    }
+
+    [RelayCommand]
+    private void UnselectAllLocations()
+    {
+        foreach (var item in LocationFilters)
+            item.IsSelected = false;
+    }
 
     partial void OnShowRevitChanged(bool value) { _settings.Settings.FilterRevit = value; SaveFilters(); RefreshFilteredFiles(); }
     partial void OnShowBlenderChanged(bool value) { _settings.Settings.FilterBlender = value; SaveFilters(); RefreshFilteredFiles(); }
@@ -767,6 +873,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnShowWebLinksChanged(bool value) { _settings.Settings.FilterWebLinks = value; SaveFilters(); RefreshFilteredFiles(); }
     partial void OnShowInstallersChanged(bool value) { _settings.Settings.FilterInstallers = value; SaveFilters(); RefreshFilteredFiles(); }
     partial void OnShowArchivesChanged(bool value) { _settings.Settings.FilterArchives = value; SaveFilters(); RefreshFilteredFiles(); }
+    partial void OnShowFoldersChanged(bool value) { _settings.Settings.FilterFolders = value; SaveFilters(); RefreshFilteredFiles(); }
     partial void OnShowOtherChanged(bool value) { _settings.Settings.FilterOther = value; SaveFilters(); RefreshFilteredFiles(); }
 
     private void SaveFilters() => _settings.Save();
@@ -816,6 +923,15 @@ public partial class MainViewModel : ObservableObject
 
     private bool PassesFilter(ScannedFile f)
     {
+        // Location filter — if any items exist, the file's directory must be selected
+        if (LocationFilters.Count > 0)
+        {
+            var match = LocationFilters.FirstOrDefault(l =>
+                string.Equals(l.DirectoryPath, f.SourceDirectory, StringComparison.OrdinalIgnoreCase));
+            if (match != null && !match.IsSelected)
+                return false;
+        }
+
         return f.Category switch
         {
             FileCategory.RevitProject or FileCategory.RevitBackup or
@@ -824,7 +940,8 @@ public partial class MainViewModel : ObservableObject
 
             FileCategory.Blender or FileCategory.BlenderBackup => ShowBlender,
 
-            FileCategory.AutoCad or FileCategory.AutoCadBackup => ShowCad,
+            FileCategory.AutoCad or FileCategory.AutoCadBackup or
+            FileCategory.FreeCad or FileCategory.FreeCadBackup => ShowCad,
 
             FileCategory.MsWord => ShowWord,
             FileCategory.MsExcel => ShowExcel,
@@ -838,6 +955,7 @@ public partial class MainViewModel : ObservableObject
 
             FileCategory.Installer or FileCategory.Driver => ShowInstallers,
             FileCategory.Archive => ShowArchives,
+            FileCategory.Folder => ShowFolders,
 
             FileCategory.Rhino or FileCategory.Plasticity or
             FileCategory.ThreeDInterchange or FileCategory.Other => ShowOther,

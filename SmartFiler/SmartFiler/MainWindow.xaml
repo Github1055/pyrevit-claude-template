@@ -328,8 +328,41 @@
                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
                                 <CheckBox Content="Archives" IsChecked="{Binding ShowArchives}" Foreground="{DynamicResource TextMutedBrush}"
                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
+                                <CheckBox Content="Folders" IsChecked="{Binding ShowFolders}" Foreground="{DynamicResource TextMutedBrush}"
+                                          FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource AppFont}"/>
                                 <CheckBox Content="Other" IsChecked="{Binding ShowOther}" Foreground="{DynamicResource TextMutedBrush}"
                                           FontSize="11" VerticalAlignment="Center" FontFamily="{StaticResource AppFont}"/>
+                            </StackPanel>
+
+                            <!-- Location filters — populated dynamically after scan -->
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                        Visibility="{Binding LocationFilters.Count, Converter={x:Static local:VisibleIfPositiveConverter.Instance}}">
+                                <TextBlock Text="Location:" Foreground="{DynamicResource TextDimBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"
+                                           FontFamily="{StaticResource AppFont}" FontWeight="SemiBold"/>
+                                <Button Content="All" Style="{StaticResource BtnGhost}" Padding="4,2" FontSize="10"
+                                        Command="{Binding SelectAllLocationsCommand}" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                                <Button Content="None" Style="{StaticResource BtnGhost}" Padding="4,2" FontSize="10"
+                                        Command="{Binding UnselectAllLocationsCommand}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="|" Foreground="{DynamicResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ItemsControl ItemsSource="{Binding LocationFilters}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding DisplayName}"
+                                                      IsChecked="{Binding IsSelected}"
+                                                      ToolTip="{Binding DirectoryPath}"
+                                                      Foreground="{DynamicResource TextMutedBrush}"
+                                                      FontSize="11" VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"
+                                                      FontFamily="{StaticResource AppFont}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -479,7 +512,14 @@
                                                FontFamily="{StaticResource AppFont}"/>
                                 </Grid>
                                 <Border Background="{DynamicResource AccentSubtleBrush}" CornerRadius="8"
-                                        Padding="10" Margin="0,8,0,0">
+                                        Padding="10" Margin="0,8,0,0"
+                                        ToolTip="Right-click for alternative destinations">
+                                    <Border.ContextMenu>
+                                        <ContextMenu x:Name="DestContextMenu"
+                                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                     Opened="DestContextMenu_Opened">
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <StackPanel>
                                         <TextBlock Text="SUGGESTED DESTINATION" Foreground="{DynamicResource AccentBrush}"
                                                    FontSize="10" FontWeight="Bold" Margin="0,0,0,4" FontFamily="{StaticResource AppFont}"/>

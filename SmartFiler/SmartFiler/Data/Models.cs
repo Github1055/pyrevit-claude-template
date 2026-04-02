@@ -20,6 +20,8 @@ namespace SmartFiler.Data
         AutoCadBackup,
         Rhino,
         Plasticity,
+        FreeCad,
+        FreeCadBackup,
         ThreeDInterchange,
         MsWord,
         MsExcel,
@@ -32,6 +34,7 @@ namespace SmartFiler.Data
         Driver,
         Archive,
         Shortcut,
+        Folder,
         Other
     }
 
@@ -76,6 +79,7 @@ namespace SmartFiler.Data
             }
         }
 
+        public bool IsDirectory { get; set; }
         public bool IsLocked { get; set; }
         public string? LockReason { get; set; }
 
@@ -122,6 +126,33 @@ namespace SmartFiler.Data
         public int SkippedCount { get; init; }
         public List<string> SkippedReasons { get; init; } = new();
         public TimeSpan ScanDuration { get; init; }
+    }
+
+    /// <summary>
+    /// Represents a single source-directory entry in the location filter bar.
+    /// </summary>
+    public class LocationFilterItem : INotifyPropertyChanged
+    {
+        public string DisplayName { get; init; } = string.Empty;
+        public string DirectoryPath { get; init; } = string.Empty;
+
+        private bool _isSelected = true;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+                    SelectionChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event EventHandler? SelectionChanged;
     }
 
     /// <summary>

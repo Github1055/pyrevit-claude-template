@@ -84,27 +84,24 @@ public class UserSettings
     public bool FilterWebLinks { get; set; } = true;
     public bool FilterInstallers { get; set; } = true;
     public bool FilterArchives { get; set; } = true;
+    public bool FilterFolders { get; set; } = true;
     public bool FilterOther { get; set; } = true;
 
     public static UserSettings CreateDefaults()
     {
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var sbhOneDrive = Path.Combine(userProfile, "OneDrive - Sworder Belcher Holt");
+
         var settings = new UserSettings
         {
             ScanSources =
             [
-                // Standard Windows folders
+                // Downloads (local — still useful as a staging area)
                 Path.Combine(userProfile, "Downloads"),
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
 
-                // OneDrive Personal (Grant Teasdale)
-                Path.Combine(userProfile, "OneDrive", "Desktop"),
-                Path.Combine(userProfile, "OneDrive", "Documents"),
-
-                // OneDrive Work (Sworder Belcher Holt)
-                Path.Combine(userProfile, "OneDrive - Sworder Belcher Holt", "Desktop"),
-                Path.Combine(userProfile, "OneDrive - Sworder Belcher Holt", "Documents"),
+                // SBH OneDrive only — Grant works from Sworder Belcher Holt, not local profile
+                Path.Combine(sbhOneDrive, "Desktop"),
+                Path.Combine(sbhOneDrive, "Documents"),
             ]
         };
 
