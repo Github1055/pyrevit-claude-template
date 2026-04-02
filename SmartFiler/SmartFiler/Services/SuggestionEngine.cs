@@ -145,6 +145,52 @@ namespace SmartFiler.Services
         }
 
         /// <summary>
+        /// If Dest2 or Dest3 are still null, fills them from move history or category defaults
+        /// (skipping any paths already used by a higher-priority destination slot).
+        /// </summary>
+        private static void FillDestFallbacks(ScannedFile file, Dictionary<string, string?> extensionFrequency)
+        {
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                file.SuggestedDestination ?? ""
+            };
+            if (file.SuggestedDestination2 is not null) used.Add(file.SuggestedDestination2);
+
+            if (file.SuggestedDestination2 is null || file.SuggestedDestination3 is null)
+            {
+                // Try move history
+                string? historyDest = null;
+                if (!string.IsNullOrEmpty(file.Extension) && extensionFrequency.TryGetValue(file.Extension, out var hd))
+                    historyDest = hd;
+
+                if (historyDest is not null && !used.Contains(historyDest))
+                {
+                    if (file.SuggestedDestination2 is null)
+                    {
+                        file.SuggestedDestination2 = historyDest;
+                        used.Add(historyDest);
+                    }
+                    else if (file.SuggestedDestination3 is null)
+                    {
+                        file.SuggestedDestination3 = historyDest;
+                        used.Add(historyDest);
+                    }
+                }
+
+                // Try category default
+                if ((file.SuggestedDestination2 is null || file.SuggestedDestination3 is null)
+                    && CategoryDefaults.TryGetValue(file.Category, out var catDefault)
+                    && catDefault is not null && !used.Contains(catDefault))
+                {
+                    if (file.SuggestedDestination2 is null)
+                        file.SuggestedDestination2 = catDefault;
+                    else if (file.SuggestedDestination3 is null)
+                        file.SuggestedDestination3 = catDefault;
+                }
+            }
+        }
+
+        /// <summary>
         /// Determines the suggestion for a single file.
         /// </summary>
         private async Task<ScannedFile> SuggestForFileAsync(
@@ -181,6 +227,16 @@ namespace SmartFiler.Services
                         file.SuggestedDestination = dest;
                         file.MatchConfidence = revitResult.Score;
                         file.MatchedProjectFolder = Path.GetFileName(revitResult.FolderPath);
+
+                        // Dest2 and Dest3: use fuzzy matching for Revit files
+                        var revitFuzzy = await _fuzzyMatcher.FindTopMatchesAsync(file.FileName, projectFolders, 3, threshold: 0.1);
+                        var revitAlts = revitFuzzy
+                            .Select(m => m.FolderPath)
+                            .Where(p => !string.Equals(p, dest, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        file.SuggestedDestination2 = revitAlts.Count > 0 ? revitAlts[0] : null;
+                        file.SuggestedDestination3 = revitAlts.Count > 1 ? revitAlts[1] : null;
+                        FillDestFallbacks(file, extensionFrequency);
                         return file;
                     }
                 }
@@ -188,12 +244,18 @@ namespace SmartFiler.Services
             }
 
             // Try fuzzy matching against general project folders on D:
-            var fuzzyResult = await _fuzzyMatcher.FindBestMatchAsync(file.FileName, projectFolders);
-            if (fuzzyResult.FolderPath is not null && fuzzyResult.Score > 0)
+            // Get top 3 matches so we can populate Dest1, Dest2, Dest3
+            var topMatches = await _fuzzyMatcher.FindTopMatchesAsync(file.FileName, projectFolders, 3, threshold: 0.1);
+
+            if (topMatches.Count > 0 && topMatches[0].Score >= 0.4)
             {
-                file.SuggestedDestination = fuzzyResult.FolderPath;
-                file.MatchConfidence = fuzzyResult.Score;
-                file.MatchedProjectFolder = Path.GetFileName(fuzzyResult.FolderPath);
+                // Top match meets the default threshold — use as Dest1
+                file.SuggestedDestination = topMatches[0].FolderPath;
+                file.MatchConfidence = topMatches[0].Score;
+                file.MatchedProjectFolder = Path.GetFileName(topMatches[0].FolderPath);
+                file.SuggestedDestination2 = topMatches.Count > 1 ? topMatches[1].FolderPath : null;
+                file.SuggestedDestination3 = topMatches.Count > 2 ? topMatches[2].FolderPath : null;
+                FillDestFallbacks(file, extensionFrequency);
                 return file;
             }
 
@@ -204,6 +266,10 @@ namespace SmartFiler.Services
             {
                 file.SuggestedDestination = historyDest;
                 file.MatchConfidence = 0.5;
+                // Dest2/3 from fuzzy matches (low threshold)
+                file.SuggestedDestination2 = topMatches.Count > 0 ? topMatches[0].FolderPath : null;
+                file.SuggestedDestination3 = topMatches.Count > 1 ? topMatches[1].FolderPath : null;
+                FillDestFallbacks(file, extensionFrequency);
                 return file;
             }
 
@@ -212,6 +278,8 @@ namespace SmartFiler.Services
             {
                 file.SuggestedDestination = defaultDest;
                 file.MatchConfidence = 0.3;
+                file.SuggestedDestination2 = topMatches.Count > 0 ? topMatches[0].FolderPath : null;
+                file.SuggestedDestination3 = topMatches.Count > 1 ? topMatches[1].FolderPath : null;
                 return file;
             }
 

@@ -17,8 +17,27 @@ namespace SmartFiler.Services
             "$RECYCLE.BIN",
             "System Volume Information",
             "msdownld.tmp",
-            "Recovery"
+            "Recovery",
+            "Users"
         };
+
+        /// <summary>
+        /// Folders that contain non-project content (games, caches, etc.) and should
+        /// be excluded from fuzzy matching to avoid false-positive suggestions.
+        /// </summary>
+        private static readonly HashSet<string> ExcludedFolders = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "SteamLibrary",
+            "Games",
+            "Megascans Assets",
+            "D5 WorkSpace"
+        };
+
+        /// <summary>
+        /// Extra folder to scan one level deep for supplier/product sub-folders.
+        /// These folders sit at depth 3 from D:\ so are missed by the 2-level root scan.
+        /// </summary>
+        private const string SupplierFolderRoot = @"D:\D CPL OFFICE\06 Details & Suppliers";
 
         private readonly ProjectIndexRepo _repo;
         private readonly string _rootPath;
@@ -105,7 +124,7 @@ namespace SmartFiler.Services
             foreach (var level1 in topDirs)
             {
                 var name1 = Path.GetFileName(level1);
-                if (SystemFolders.Contains(name1))
+                if (SystemFolders.Contains(name1) || ExcludedFolders.Contains(name1))
                     continue;
 
                 try
@@ -141,6 +160,41 @@ namespace SmartFiler.Services
                     catch (UnauthorizedAccessException)
                     {
                         // Skip inaccessible sub-folder
+                    }
+                }
+            }
+
+            // Extra scan: supplier/product folders at D:\D CPL OFFICE\06 Details & Suppliers\
+            // These are at depth 3 from D:\ so the 2-level root scan above misses them.
+            if (Directory.Exists(SupplierFolderRoot))
+            {
+                IEnumerable<string> supplierDirs;
+                try
+                {
+                    supplierDirs = Directory.EnumerateDirectories(SupplierFolderRoot);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    supplierDirs = [];
+                }
+
+                foreach (var supplierDir in supplierDirs)
+                {
+                    var supplierName = Path.GetFileName(supplierDir);
+                    if (SystemFolders.Contains(supplierName) || ExcludedFolders.Contains(supplierName))
+                        continue;
+
+                    // Only add if not already indexed (the 2-level scan may have picked up the parent)
+                    if (!results.Any(r => string.Equals(r.FolderPath, supplierDir, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        try
+                        {
+                            results.Add(CreateProjectFolder(supplierDir, supplierName, now));
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            // Skip inaccessible supplier folder
+                        }
                     }
                 }
             }

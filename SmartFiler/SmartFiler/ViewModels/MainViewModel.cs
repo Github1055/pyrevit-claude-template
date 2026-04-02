@@ -964,6 +964,27 @@ public partial class MainViewModel : ObservableObject
         };
     }
 
+    /// <summary>
+    /// Sets the active destination slot for a file and approves it.
+    /// destIndex: 0 = Dest1 (SuggestedDestination), 1 = Dest2, 2 = Dest3.
+    /// </summary>
+    public void SetFileDestination(ScannedFile file, int destIndex)
+    {
+        file.ActiveDestIndex = destIndex;
+        file.AlternativeDestination = destIndex switch
+        {
+            1 => file.SuggestedDestination2,
+            2 => file.SuggestedDestination3,
+            _ => null
+        };
+        if (file.Action != FileAction.Deferred)
+        {
+            file.Action = FileAction.Approved;
+            UpdateCounts();
+        }
+        RefreshView();
+    }
+
     public void UpdateCounts()
     {
         var all = ProjectMatchFiles.Concat(DownloadFiles).Concat(DeleteFiles).ToList();

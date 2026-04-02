@@ -187,4 +187,68 @@
         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
     </Style>
 
+    <!-- ─── Destination Button Style ─── -->
+    <!-- Plain-text button used in the Dest 1/2/3 columns of the triage ListView.
+         The active column is highlighted with AccentBrush; inactive columns use TextMutedBrush.
+         Active state is determined by Tag (0/1/2) vs ActiveDestIndex on the DataContext (ScannedFile). -->
+    <Style x:Key="DestButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <TextBlock x:Name="Txt"
+                                   Text="{TemplateBinding Content}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   FontFamily="{TemplateBinding FontFamily}"
+                                   FontWeight="{TemplateBinding FontWeight}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Txt" Property="TextDecorations" Value="Underline"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!-- Trigger: highlight when this button's Tag matches ActiveDestIndex on the row -->
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ActiveDestIndex}" Value="0"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="0"/>
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ActiveDestIndex}" Value="1"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="1"/>
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ActiveDestIndex}" Value="2"/>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="2"/>
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
 </ResourceDictionary>

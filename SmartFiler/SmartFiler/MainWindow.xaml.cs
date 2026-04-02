@@ -479,6 +479,50 @@ public partial class MainWindow : Window
         }
     }
 
+    // ─── Destination column click handlers ───
+
+    private void DestButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button btn) return;
+        if (btn.DataContext is not SmartFiler.Data.ScannedFile file) return;
+        if (!int.TryParse(btn.Tag?.ToString(), out var index)) return;
+        if (DataContext is MainViewModel vm)
+            vm.SetFileDestination(file, index);
+    }
+
+    // ─── Destination right-click alternatives menu ───
+
+    private void DestContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu) return;
+        if (DataContext is not MainViewModel vm) return;
+
+        menu.Items.Clear();
+
+        var alts = vm.AlternativeSuggestions;
+
+        if (alts.Count == 0)
+        {
+            var empty = new MenuItem { Header = "No alternative suggestions", IsEnabled = false };
+            menu.Items.Add(empty);
+        }
+        else
+        {
+            foreach (var alt in alts)
+            {
+                var item = new MenuItem { Header = alt };
+                item.Click += (_, _) => vm.SelectAlternativeSuggestionCommand.Execute(alt);
+                menu.Items.Add(item);
+            }
+        }
+
+        menu.Items.Add(new Separator());
+
+        var browseItem = new MenuItem { Header = "Browse for folder..." };
+        browseItem.Click += (_, _) => Preview_BrowseAlternative(this, new RoutedEventArgs());
+        menu.Items.Add(browseItem);
+    }
+
     // ─── Helpers ───
 
     private static void OpenFileInDefaultApp(string filePath)

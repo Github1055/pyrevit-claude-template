@@ -444,14 +444,42 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Width="180">
+                                        <GridViewColumn Width="150">
                                             <GridViewColumn.Header>
-                                                <GridViewColumnHeader Content="Destination" Tag="SuggestedDestination"/>
+                                                <GridViewColumnHeader Content="Dest 1" Tag="SuggestedDestination"/>
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding SuggestedDestination}" TextTrimming="CharacterEllipsis"
-                                                               Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+                                                    <Button Content="{Binding SuggestedDestination}"
+                                                            Click="DestButton_Click" Tag="0"
+                                                            Style="{StaticResource DestButtonStyle}"
+                                                            ToolTip="{Binding SuggestedDestination}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="150">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="Dest 2"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding SuggestedDestination2}"
+                                                            Click="DestButton_Click" Tag="1"
+                                                            Style="{StaticResource DestButtonStyle}"
+                                                            ToolTip="{Binding SuggestedDestination2}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Width="150">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="Dest 3"/>
+                                            </GridViewColumn.Header>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding SuggestedDestination3}"
+                                                            Click="DestButton_Click" Tag="2"
+                                                            Style="{StaticResource DestButtonStyle}"
+                                                            ToolTip="{Binding SuggestedDestination3}"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>

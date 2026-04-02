@@ -65,6 +65,26 @@ namespace SmartFiler.Data
         public double MatchConfidence { get; set; }
         public string? MatchedProjectFolder { get; set; }
 
+        public string? SuggestedDestination2 { get; set; }
+        public string? SuggestedDestination3 { get; set; }
+
+        private int _activeDestIndex = 0;
+        /// <summary>
+        /// Which destination column is active: 0 = Dest1 (SuggestedDestination), 1 = Dest2, 2 = Dest3.
+        /// </summary>
+        public int ActiveDestIndex
+        {
+            get => _activeDestIndex;
+            set
+            {
+                if (_activeDestIndex != value)
+                {
+                    _activeDestIndex = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ActiveDestIndex)));
+                }
+            }
+        }
+
         private FileAction _action = FileAction.Pending;
         public FileAction Action
         {
